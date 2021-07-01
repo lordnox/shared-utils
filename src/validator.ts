@@ -122,8 +122,20 @@ export const or =
   (val: any, opts = {}): val is A | B =>
     opts.stop ? _orStopped(valA, valB, val, opts) : _or(valA, valB, val, opts)
 
-export function all<A>(a: Validator<A>): Validator<A>
-export function all<A, B>(a: Validator<A>, b: Validator<B>): Validator<A & B>
+type V<T> = Validator<T>
+// export function all<A>(a: V<A>): V<A>
+// export function all<A, B>(a: V<A>, b: V<B>): V<A & B>
+// export function all<A, B, C>(a: V<A>, b: V<B>, c: V<C>): V<A & B & C>
+// export function all<A, B, C, D>(a: V<A>, b: V<B>, c: V<C>, d: V[D]): V<A & B & C>
+// export function all<A, B, C, D>(a: V<A>, b: V<B>, c: V<C>, d: V[D]): V<A & B & C>
+// export function all<A, B, C, D>(a: V<A>, b: V<B>, c: V<C>, d: V[D]): V<A & B & C>
+// export function all<A, B, C, D>(a: V<A>, b: V<B>, c: V<C>, d: V[D]): V<A & B & C>
+// export function all<A, B, C, D>(a: V<A>, b: V<B>, c: V<C>, d: V[D]): V<A & B & C>
+
+export function all<A>(...args: [V<A>]): V<A>
+export function all<A, B>(...args: [V<A>, V<B>]): V<A & B>
+export function all<A, B, C>(...args: [V<A>, V<B>, V<C>]): V<A & B & C>
+
 export function all(...validators: Validator<any>[]) {
   return (val: any, opts = {}) =>
     validators.reduce((memo, validator) => memo && validator(val, opts), true)
@@ -131,3 +143,12 @@ export function all(...validators: Validator<any>[]) {
 
 export const isNumberOrNull = or(isNumber, isNull)
 export const isStringOrNull = or(isString, isNull)
+
+const ttt = all(
+  hasKey('s', isString),
+  hasKey('S', isNumber),
+  hasKey('x', isNumber)
+)
+const val: any = null
+
+if (ttt(val)) val.s

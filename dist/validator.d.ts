@@ -30,8 +30,11 @@ export declare const hasKey: <Key extends string, Datatype>(key: Key, validator:
 export declare const isArray: <Datatype>(validator: Validator<Datatype>) => (val: any, opts?: {}) => val is Datatype[];
 export declare const and: <A, B>(valA: Validator<A>, valB: Validator<B>) => Validator<A & B>;
 export declare const or: <A, B>(valA: Validator<A>, valB: Validator<B>) => Validator<A | B>;
-export declare function all<A>(a: Validator<A>): Validator<A>;
-export declare function all<A, B>(a: Validator<A>, b: Validator<B>): Validator<A & B>;
+declare type V<T> = Validator<T>;
+export declare function all<A>(...args: [V<A>]): V<A>;
+export declare function all<A, B>(...args: [V<A>, V<B>]): V<A & B>;
+export declare function all<A, B, C>(...args: [V<A>, V<B>, V<C>]): V<A & B & C>;
 export declare const isNumberOrNull: Validator<number | null>;
 export declare const isStringOrNull: Validator<string | null>;
+export {};
 //# sourceMappingURL=validator.d.ts.map
