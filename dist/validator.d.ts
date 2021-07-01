@@ -31,9 +31,32 @@ export declare const isArray: <Datatype>(validator: Validator<Datatype>) => (val
 export declare const and: <A, B>(valA: Validator<A>, valB: Validator<B>) => Validator<A & B>;
 export declare const or: <A, B>(valA: Validator<A>, valB: Validator<B>) => Validator<A | B>;
 declare type V<T> = Validator<T>;
-export declare function all<A>(...args: [V<A>]): V<A>;
-export declare function all<A, B>(...args: [V<A>, V<B>]): V<A & B>;
-export declare function all<A, B, C>(...args: [V<A>, V<B>, V<C>]): V<A & B & C>;
+export declare function all<A>(...args: [V<A>]): Validator<A>;
+export declare function all<A, B>(...args: [V<A>, V<B>]): Validator<A & B>;
+export declare function all<A, B, C>(...args: [V<A>, V<B>, V<C>]): Validator<A & B & C>;
+export declare function all<A, B, C, D>(...args: [V<A>, V<B>, V<C>, V<D>]): Validator<A & B & C & D>;
+export declare function all<A, B, C, D, E>(...args: [V<A>, V<B>, V<C>, V<D>, V<E>]): Validator<A & B & C & D & E>;
+export declare function all<A, B, C, D, E, F>(...args: [V<A>, V<B>, V<C>, V<D>, V<E>, V<F>]): Validator<A & B & C & D & E & F>;
+export declare function all<A, B, C, D, E, F, G>(...args: [V<A>, V<B>, V<C>, V<D>, V<E>, V<F>, V<G>]): Validator<A & B & C & D & E & F & G>;
+export declare function all<A, B, C, D, E, F, G, H>(...args: [V<A>, V<B>, V<C>, V<D>, V<E>, V<F>, V<G>, V<H>]): Validator<A & B & C & D & E & F & G & H>;
+export declare function all<A, B, C, D, E, F, G, H, I>(...args: [V<A>, V<B>, V<C>, V<D>, V<E>, V<F>, V<G>, V<H>, V<I>]): Validator<A & B & C & D & E & F & G & H & I>;
+export declare function all<A, B, C, D, E, F, G, H, I, J>(...args: [V<A>, V<B>, V<C>, V<D>, V<E>, V<F>, V<G>, V<H>, V<I>, V<J>]): Validator<A & B & C & D & E & F & G & H & I & J>;
+export declare function all<A, B, C, D, E, F, G, H, I, J, K>(...args: [V<A>, V<B>, V<C>, V<D>, V<E>, V<F>, V<G>, V<H>, V<I>, V<J>, V<K>]): Validator<A & B & C & D & E & F & G & H & I & J & K>;
+export declare function all<A, B, C, D, E, F, G, H, I, J, K, L>(...args: [
+    V<A>,
+    V<B>,
+    V<C>,
+    V<D>,
+    V<E>,
+    V<F>,
+    V<G>,
+    V<H>,
+    V<I>,
+    V<J>,
+    V<K>,
+    V<L>
+]): Validator<A & B & C & D & E & F & G & H & I & J & K & L>;
+export declare function all<R>(...args: Validator<any>[]): Validator<R>;
 export declare const isNumberOrNull: Validator<number | null>;
 export declare const isStringOrNull: Validator<string | null>;
 export {};

@@ -123,18 +123,50 @@ export const or =
     opts.stop ? _orStopped(valA, valB, val, opts) : _or(valA, valB, val, opts)
 
 type V<T> = Validator<T>
-// export function all<A>(a: V<A>): V<A>
-// export function all<A, B>(a: V<A>, b: V<B>): V<A & B>
-// export function all<A, B, C>(a: V<A>, b: V<B>, c: V<C>): V<A & B & C>
-// export function all<A, B, C, D>(a: V<A>, b: V<B>, c: V<C>, d: V[D]): V<A & B & C>
-// export function all<A, B, C, D>(a: V<A>, b: V<B>, c: V<C>, d: V[D]): V<A & B & C>
-// export function all<A, B, C, D>(a: V<A>, b: V<B>, c: V<C>, d: V[D]): V<A & B & C>
-// export function all<A, B, C, D>(a: V<A>, b: V<B>, c: V<C>, d: V[D]): V<A & B & C>
-// export function all<A, B, C, D>(a: V<A>, b: V<B>, c: V<C>, d: V[D]): V<A & B & C>
-
-export function all<A>(...args: [V<A>]): V<A>
-export function all<A, B>(...args: [V<A>, V<B>]): V<A & B>
-export function all<A, B, C>(...args: [V<A>, V<B>, V<C>]): V<A & B & C>
+export function all<A>(...args: [V<A>]): Validator<A>
+export function all<A, B>(...args: [V<A>, V<B>]): Validator<A & B>
+export function all<A, B, C>(...args: [V<A>, V<B>, V<C>]): Validator<A & B & C>
+export function all<A, B, C, D>(
+  ...args: [V<A>, V<B>, V<C>, V<D>]
+): Validator<A & B & C & D>
+export function all<A, B, C, D, E>(
+  ...args: [V<A>, V<B>, V<C>, V<D>, V<E>]
+): Validator<A & B & C & D & E>
+export function all<A, B, C, D, E, F>(
+  ...args: [V<A>, V<B>, V<C>, V<D>, V<E>, V<F>]
+): Validator<A & B & C & D & E & F>
+export function all<A, B, C, D, E, F, G>(
+  ...args: [V<A>, V<B>, V<C>, V<D>, V<E>, V<F>, V<G>]
+): Validator<A & B & C & D & E & F & G>
+export function all<A, B, C, D, E, F, G, H>(
+  ...args: [V<A>, V<B>, V<C>, V<D>, V<E>, V<F>, V<G>, V<H>]
+): Validator<A & B & C & D & E & F & G & H>
+export function all<A, B, C, D, E, F, G, H, I>(
+  ...args: [V<A>, V<B>, V<C>, V<D>, V<E>, V<F>, V<G>, V<H>, V<I>]
+): Validator<A & B & C & D & E & F & G & H & I>
+export function all<A, B, C, D, E, F, G, H, I, J>(
+  ...args: [V<A>, V<B>, V<C>, V<D>, V<E>, V<F>, V<G>, V<H>, V<I>, V<J>]
+): Validator<A & B & C & D & E & F & G & H & I & J>
+export function all<A, B, C, D, E, F, G, H, I, J, K>(
+  ...args: [V<A>, V<B>, V<C>, V<D>, V<E>, V<F>, V<G>, V<H>, V<I>, V<J>, V<K>]
+): Validator<A & B & C & D & E & F & G & H & I & J & K>
+export function all<A, B, C, D, E, F, G, H, I, J, K, L>(
+  ...args: [
+    V<A>,
+    V<B>,
+    V<C>,
+    V<D>,
+    V<E>,
+    V<F>,
+    V<G>,
+    V<H>,
+    V<I>,
+    V<J>,
+    V<K>,
+    V<L>
+  ]
+): Validator<A & B & C & D & E & F & G & H & I & J & K & L>
+export function all<R>(...args: Validator<any>[]): Validator<R>
 
 export function all(...validators: Validator<any>[]) {
   return (val: any, opts = {}) =>
@@ -143,12 +175,3 @@ export function all(...validators: Validator<any>[]) {
 
 export const isNumberOrNull = or(isNumber, isNull)
 export const isStringOrNull = or(isString, isNull)
-
-const ttt = all(
-  hasKey('s', isString),
-  hasKey('S', isNumber),
-  hasKey('x', isNumber)
-)
-const val: any = null
-
-if (ttt(val)) val.s

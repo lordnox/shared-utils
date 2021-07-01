@@ -861,10 +861,6 @@ function all() {
 }
 var isNumberOrNull = or(isNumber, isNull);
 var isStringOrNull = or(isString, isNull);
-var ttt = all(hasKey('s', isString), hasKey('S', isNumber), hasKey('x', isNumber));
-var val = null;
-if (ttt(val))
-    val.s;
 
 exports.AsyncSerialScheduler = AsyncSerialScheduler;
 exports.all = all;
