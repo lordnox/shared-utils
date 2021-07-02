@@ -1,30 +1,33 @@
-import { Cache } from '../operators/cache'
 import { defaultLogger, LogFn } from '../operators/log'
 
-export const filterCalls =
-  <Args extends any[], Result>(
-    fn: (...args: Args) => Result,
-    {
-      cache = new Cache<Args>(),
-      log: logInput = '☕️ ',
-      filter = () => false,
-      hashFn = JSON.stringify,
-      map = (args) => args,
-    }: {
-      map?: (args: Args) => Args
-      filter?: (args: Args) => boolean
-      cache?: Cache<Args>
-      log?: LogFn | string
-      hashFn?: (args: Args) => string
-    } = {}
-  ) =>
-  (...args: Args): Result | undefined => {
+interface FilterCallsOptions<Arg> {
+  map?: (arg: Arg) => Arg
+  filter?: (arg: Arg) => boolean
+  log?: LogFn | string
+}
+
+// export function filterCalls<Arg, Result>(fn: (arg: Arg) => Result, options?: FilterCallsOptions<Arg>): (arg: Arg) => Result
+export function filterCalls<Fn extends (arg: any, ...args: any[]) => any>(
+  fn: Fn,
+  options?: FilterCallsOptions<Parameters<typeof fn>[0]>
+): typeof fn
+export function filterCalls(
+  fn: any,
+  {
+    log: logInput = '☕️ ',
+    filter = () => false,
+    map = (arg) => arg,
+  }: FilterCallsOptions<Parameters<typeof fn>[0]> = {}
+) {
+  return (...argsIn: any[]) => {
+    const [arg, ...extraArgs] = argsIn
     const log = defaultLogger('filter-fetcher')(logInput)
-    const mappedArgs = map(args)
+    const mappedArg = map(arg)
     // TODO this is problematic for equality reason
-    if (filter(mappedArgs)) {
+    if (filter(mappedArg)) {
       log(`filtered ${location}`)
       return undefined
     }
-    return fn(...mappedArgs)
+    return fn(mappedArg, ...extraArgs)
   }
+}

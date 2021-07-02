@@ -697,16 +697,19 @@ const limitCalls = (fn, { cache = new Cache(), log: logInput = '❓ ', hashFn = 
     };
 };
 
-const filterCalls = (fn, { cache = new Cache(), log: logInput = '☕️ ', filter = () => false, hashFn = JSON.stringify, map = (args) => args, } = {}) => (...args) => {
-    const log = defaultLogger('filter-fetcher')(logInput);
-    const mappedArgs = map(args);
-    // TODO this is problematic for equality reason
-    if (filter(mappedArgs)) {
-        log(`filtered ${location}`);
-        return undefined;
-    }
-    return fn(...mappedArgs);
-};
+function filterCalls(fn, { log: logInput = '☕️ ', filter = () => false, map = (arg) => arg, } = {}) {
+    return (...argsIn) => {
+        const [arg, ...extraArgs] = argsIn;
+        const log = defaultLogger('filter-fetcher')(logInput);
+        const mappedArg = map(arg);
+        // TODO this is problematic for equality reason
+        if (filter(mappedArg)) {
+            log(`filtered ${location}`);
+            return undefined;
+        }
+        return fn(mappedArg, ...extraArgs);
+    };
+}
 
 /** Creates a Promise with the `reject` and `resolve` functions
  * placed as methods on the promise object itself. It allows you to do:
