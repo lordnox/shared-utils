@@ -3737,6 +3737,7 @@ exports.locale = locale;
 const setLocale = (newLocal) => {
     exports.locale = newLocal;
 };
+const getLocale = () => exports.locale;
 const f = (date, formatStr, options) => format(date, formatStr, {
     locale: exports.locale,
     ...options,
@@ -3758,6 +3759,7 @@ exports.delay = delay;
 exports.delayResult = delayResult;
 exports.f = f;
 exports.filterCalls = filterCalls;
+exports.getLocale = getLocale;
 exports.hasKey = hasKey;
 exports.isArray = isArray;
 exports.isDate = isDate;

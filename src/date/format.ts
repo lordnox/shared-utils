@@ -7,6 +7,8 @@ export const setLocale = (newLocal: Locale) => {
   locale = newLocal
 }
 
+export const getLocale = () => locale
+
 export const f: (
   ...parms: Parameters<typeof format>
 ) => ReturnType<typeof format> = (date, formatStr, options) =>
