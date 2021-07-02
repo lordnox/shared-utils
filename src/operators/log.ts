@@ -4,6 +4,7 @@ export type LogFn = (message?: any, ...optionalParams: any[]) => void
 export const types: Record<string, [active: boolean, type: LogType]> = {
   'use-observable': [false, 'debug'],
   'debounced-observable': [false, 'debug'],
+  queue: [false, 'debug'],
 }
 
 export const defaultLogger = (type: string) => (logInput: LogInput) =>
