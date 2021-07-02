@@ -9,4 +9,5 @@ export * from './promise/unpack-type';
 export * from './operators/cache';
 export * from './operators/log';
 export * from './operators/validator';
+export * from './operators/queue';
 //# sourceMappingURL=index.d.ts.map

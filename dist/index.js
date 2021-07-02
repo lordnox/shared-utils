@@ -674,6 +674,7 @@ class Cache {
 const types = {
     'use-observable': [false, 'debug'],
     'debounced-observable': [false, 'debug'],
+    queue: [false, 'debug'],
 };
 const defaultLogger = (type) => (logInput) => typeof logInput === 'string' ? createLogger(type)(logInput) : logInput;
 const createLogger = (type) => (prefix = '') => {
@@ -792,8 +793,57 @@ function all(...validators) {
 const isNumberOrNull = or(isNumber, isNull);
 const isStringOrNull = or(isString, isNull);
 
+class Queue {
+    #queue = [];
+    #active = 0;
+    #handle;
+    #level;
+    #log;
+    #available;
+    constructor(handle, { level = 5, name = 'Q', availabilityFn = (active, level) => active < level, } = {}) {
+        this.#handle = handle;
+        this.#level = level;
+        this.#log = createLogger('queue')(name);
+        this.#available = availabilityFn;
+    }
+    available() {
+        return this.#available(this.#active, this.#level);
+    }
+    deque() {
+        if (this.available())
+            this.pop();
+    }
+    enque(data) {
+        this.#log('enqueing new item');
+        const promise = deferred();
+        this.#queue.push([data, promise]);
+        this.deque();
+        return promise;
+    }
+    async pop() {
+        if (!this.#queue.length) {
+            return;
+        }
+        this.#active++;
+        const [item, promise] = this.#queue.shift();
+        try {
+            const result = await this.#handle(item);
+            promise.resolve(result);
+        }
+        catch (error) {
+            promise.reject(error);
+        }
+        this.#active--;
+        this.pop();
+    }
+    getStatus() {
+        return this.#active;
+    }
+}
+
 exports.AsyncSerialScheduler = AsyncSerialScheduler;
 exports.Cache = Cache;
+exports.Queue = Queue;
 exports.all = all;
 exports.and = and;
 exports.collect = collect;
