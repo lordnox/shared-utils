@@ -17,3 +17,5 @@ export * from './operators/cache'
 export * from './operators/log'
 export * from './operators/validator'
 export * from './operators/queue'
+
+export * from './date/format'
