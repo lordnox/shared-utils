@@ -632,6 +632,82 @@ const delayResult = (fn, period = 0) => async (...args) => {
     return result;
 };
 
+const DEFAULT_CACHE_TTL = 15 * 60 * 1000;
+const createMemoryCacheStore = (now = Date.now) => {
+    const cache = {};
+    const store = {
+        put: (key, data) => (cache[key] = {
+            created: now(),
+            data,
+        }),
+        get: (key) => cache[key],
+    };
+    return store;
+};
+class Cache {
+    #store;
+    #ttl;
+    #now;
+    constructor({ store = createMemoryCacheStore(), ttl = DEFAULT_CACHE_TTL, now = Date.now, } = {}) {
+        this.#store = store;
+        this.#ttl = ttl;
+        this.#now = now;
+    }
+    get(key) {
+        const cacheEntry = this.#store.get(key);
+        if (!cacheEntry)
+            return;
+        if (cacheEntry.created + this.#ttl > this.#now())
+            return;
+        return cacheEntry.data;
+    }
+    put(key, data) {
+        this.#store.put(key, data);
+    }
+}
+
+const types = {
+    'use-observable': [false, 'debug'],
+    'debounced-observable': [false, 'debug'],
+    queue: [false, 'debug'],
+    'limit-calls': [false, 'debug'],
+    'filter-calls': [false, 'debug'],
+};
+const defaultLogger = (type) => (logInput) => typeof logInput === 'string' ? createLogger(type)(logInput) : logInput;
+const createLogger = (type) => (prefix = '') => {
+    const logType = types[type] ?? [true, 'log'];
+    const logFn = logType[0] ? console[logType[1]] : () => { };
+    return (message, ...optionalParams) => logFn(`${prefix} ${message}`, ...optionalParams);
+};
+
+const limitCalls = (fn, { cache = new Cache(), log: logInput = '❓ ', hashFn = JSON.stringify, } = {}) => {
+    const log = defaultLogger('limit-calls')(logInput);
+    log(`Created limit-calls`);
+    return async (...args) => {
+        const hash = hashFn(args);
+        const cached = cache.get(hash);
+        if (cached) {
+            log(`Using cached result`);
+            return cached;
+        }
+        log(`Updating cache`);
+        const newData = await fn(...args);
+        cache.put(hash, newData);
+        return newData;
+    };
+};
+
+const filterCalls = (fn, { cache = new Cache(), log: logInput = '☕️ ', filter = () => false, hashFn = JSON.stringify, map = (args) => args, } = {}) => (...args) => {
+    const log = defaultLogger('filter-fetcher')(logInput);
+    const mappedArgs = map(args);
+    // TODO this is problematic for equality reason
+    if (filter(mappedArgs)) {
+        log(`filtered ${location}`);
+        return null;
+    }
+    return fn(...mappedArgs);
+};
+
 /** Creates a Promise with the `reject` and `resolve` functions
  * placed as methods on the promise object itself. It allows you to do:
  *
@@ -646,42 +722,6 @@ function deferred() {
     });
     return Object.assign(promise, methods);
 }
-
-const createMemoryCacheStore = (now = Date.now) => {
-    const cache = {};
-    const store = {
-        put: (key, data) => (cache[key] = {
-            created: now(),
-            data,
-        }),
-        get: (key) => cache[key],
-    };
-    return store;
-};
-class Cache {
-    #store;
-    constructor(store = createMemoryCacheStore()) {
-        this.#store = store;
-    }
-    get(key) {
-        return this.#store.get(key);
-    }
-    put(key, data) {
-        this.#store.put(key, data);
-    }
-}
-
-const types = {
-    'use-observable': [false, 'debug'],
-    'debounced-observable': [false, 'debug'],
-    queue: [false, 'debug'],
-};
-const defaultLogger = (type) => (logInput) => typeof logInput === 'string' ? createLogger(type)(logInput) : logInput;
-const createLogger = (type) => (prefix = '') => {
-    const logType = types[type] ?? [true, 'log'];
-    const logFn = logType[0] ? console[logType[1]] : () => { };
-    return (message, ...optionalParams) => logFn(`${prefix} ${message}`, ...optionalParams);
-};
 
 function requiredArgs(required, args) {
   if (args.length < required) {
@@ -843,6 +883,7 @@ class Queue {
 
 exports.AsyncSerialScheduler = AsyncSerialScheduler;
 exports.Cache = Cache;
+exports.DEFAULT_CACHE_TTL = DEFAULT_CACHE_TTL;
 exports.Queue = Queue;
 exports.all = all;
 exports.and = and;
@@ -854,6 +895,7 @@ exports.defaultLogger = defaultLogger;
 exports.deferred = deferred;
 exports.delay = delay;
 exports.delayResult = delayResult;
+exports.filterCalls = filterCalls;
 exports.hasKey = hasKey;
 exports.isArray = isArray;
 exports.isDate = isDate;
@@ -865,6 +907,7 @@ exports.isObject = isObject;
 exports.isString = isString;
 exports.isStringOrNull = isStringOrNull;
 exports.isUnkown = isUnkown;
+exports.limitCalls = limitCalls;
 exports.mapScheduler = mapScheduler;
 exports.or = or;
 exports.removeElement = removeElement;

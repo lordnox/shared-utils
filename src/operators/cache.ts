@@ -1,3 +1,5 @@
+export const DEFAULT_CACHE_TTL = 15 * 60 * 1000
+
 export interface CacheEntry<Type> {
   created: number
   data: Type
@@ -22,13 +24,28 @@ export const createMemoryCacheStore = <Type>(now = Date.now) => {
 
 export class Cache<Type> {
   #store: CacheStore<Type>
+  #ttl: number
+  #now: () => number
 
-  constructor(store: CacheStore<Type> = createMemoryCacheStore<Type>()) {
+  constructor({
+    store = createMemoryCacheStore<Type>(),
+    ttl = DEFAULT_CACHE_TTL,
+    now = Date.now,
+  }: {
+    store?: CacheStore<Type>
+    ttl?: number
+    now?: () => number
+  } = {}) {
     this.#store = store
+    this.#ttl = ttl
+    this.#now = now
   }
 
   get(key: string) {
-    return this.#store.get(key)
+    const cacheEntry = this.#store.get(key)
+    if (!cacheEntry) return
+    if (cacheEntry.created + this.#ttl > this.#now()) return
+    return cacheEntry.data
   }
 
   put(key: string, data: Type) {

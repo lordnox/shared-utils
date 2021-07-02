@@ -1,0 +1,1 @@
+{"version":3,"file":"limit-calls.d.ts","sourceRoot":"","sources":["../../src/functions/limit-calls.ts"],"names":[],"mappings":"AAAA,OAAO,EAAE,aAAa,EAAE,MAAM,QAAQ,CAAA;AACtC,OAAO,EAAE,KAAK,EAAE,MAAM,oBAAoB,CAAA;AAC1C,OAAO,EAAiB,KAAK,EAAE,MAAM,kBAAkB,CAAA;AAEvD,eAAO,MAAM,UAAU,OACjB,aAAa;;;+BAQ2B,MAAM;mBAiBnD,CAAA"}

@@ -5,6 +5,8 @@ export const types: Record<string, [active: boolean, type: LogType]> = {
   'use-observable': [false, 'debug'],
   'debounced-observable': [false, 'debug'],
   queue: [false, 'debug'],
+  'limit-calls': [false, 'debug'],
+  'filter-calls': [false, 'debug'],
 }
 
 export const defaultLogger = (type: string) => (logInput: LogInput) =>

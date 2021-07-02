@@ -2,6 +2,8 @@ export * from './array/collect';
 export * from './array/remove-element';
 export * from './observable/operator';
 export * from './functions/delay-result';
+export * from './functions/limit-calls';
+export * from './functions/filter-calls';
 export * from './scheduler/async-scheduler';
 export * from './promise/deferred';
 export * from './promise/delay';
