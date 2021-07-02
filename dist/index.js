@@ -13,97 +13,31 @@ Object.defineProperty(exports, '__esModule', { value: true });
  * print(4) // ['2', '3', '4']
  * ```
  **/
-var collect = function (fn, _a) {
-    var _b = _a === void 0 ? {} : _a, _c = _b.order, order = _c === void 0 ? 'unshift' : _c, _d = _b.overflow, overflow = _d === void 0 ? 100 : _d;
-    var args = [];
-    var addArgUnshift = function (arg) {
+const collect = (fn, { order = 'unshift', overflow = 100 } = {}) => {
+    let args = [];
+    const addArgUnshift = (arg) => {
         args.unshift(arg);
         args = args.slice(0, overflow);
     };
-    var addArgPush = function (arg) {
+    const addArgPush = (arg) => {
         args.push(arg);
         args = args.slice(Math.max(0, args.length - overflow));
     };
-    var addArg = order === 'unshift' ? addArgUnshift : addArgPush;
-    return function (arg) {
+    const addArg = order === 'unshift' ? addArgUnshift : addArgPush;
+    return (arg) => {
         addArg(arg);
         fn(args);
     };
 };
 
-/*! *****************************************************************************
-Copyright (c) Microsoft Corporation.
-
-Permission to use, copy, modify, and/or distribute this software for any
-purpose with or without fee is hereby granted.
-
-THE SOFTWARE IS PROVIDED "AS IS" AND THE AUTHOR DISCLAIMS ALL WARRANTIES WITH
-REGARD TO THIS SOFTWARE INCLUDING ALL IMPLIED WARRANTIES OF MERCHANTABILITY
-AND FITNESS. IN NO EVENT SHALL THE AUTHOR BE LIABLE FOR ANY SPECIAL, DIRECT,
-INDIRECT, OR CONSEQUENTIAL DAMAGES OR ANY DAMAGES WHATSOEVER RESULTING FROM
-LOSS OF USE, DATA OR PROFITS, WHETHER IN AN ACTION OF CONTRACT, NEGLIGENCE OR
-OTHER TORTIOUS ACTION, ARISING OUT OF OR IN CONNECTION WITH THE USE OR
-PERFORMANCE OF THIS SOFTWARE.
-***************************************************************************** */
-
-function __awaiter(thisArg, _arguments, P, generator) {
-    function adopt(value) { return value instanceof P ? value : new P(function (resolve) { resolve(value); }); }
-    return new (P || (P = Promise))(function (resolve, reject) {
-        function fulfilled(value) { try { step(generator.next(value)); } catch (e) { reject(e); } }
-        function rejected(value) { try { step(generator["throw"](value)); } catch (e) { reject(e); } }
-        function step(result) { result.done ? resolve(result.value) : adopt(result.value).then(fulfilled, rejected); }
-        step((generator = generator.apply(thisArg, _arguments || [])).next());
-    });
-}
-
-function __generator(thisArg, body) {
-    var _ = { label: 0, sent: function() { if (t[0] & 1) throw t[1]; return t[1]; }, trys: [], ops: [] }, f, y, t, g;
-    return g = { next: verb(0), "throw": verb(1), "return": verb(2) }, typeof Symbol === "function" && (g[Symbol.iterator] = function() { return this; }), g;
-    function verb(n) { return function (v) { return step([n, v]); }; }
-    function step(op) {
-        if (f) throw new TypeError("Generator is already executing.");
-        while (_) try {
-            if (f = 1, y && (t = op[0] & 2 ? y["return"] : op[0] ? y["throw"] || ((t = y["return"]) && t.call(y), 0) : y.next) && !(t = t.call(y, op[1])).done) return t;
-            if (y = 0, t) op = [op[0] & 2, t.value];
-            switch (op[0]) {
-                case 0: case 1: t = op; break;
-                case 4: _.label++; return { value: op[1], done: false };
-                case 5: _.label++; y = op[1]; op = [0]; continue;
-                case 7: op = _.ops.pop(); _.trys.pop(); continue;
-                default:
-                    if (!(t = _.trys, t = t.length > 0 && t[t.length - 1]) && (op[0] === 6 || op[0] === 2)) { _ = 0; continue; }
-                    if (op[0] === 3 && (!t || (op[1] > t[0] && op[1] < t[3]))) { _.label = op[1]; break; }
-                    if (op[0] === 6 && _.label < t[1]) { _.label = t[1]; t = op; break; }
-                    if (t && _.label < t[2]) { _.label = t[2]; _.ops.push(op); break; }
-                    if (t[2]) _.ops.pop();
-                    _.trys.pop(); continue;
-            }
-            op = body.call(thisArg, _);
-        } catch (e) { op = [6, e]; y = 0; } finally { f = t = 0; }
-        if (op[0] & 5) throw op[1]; return { value: op[0] ? op[1] : void 0, done: true };
-    }
-}
-
-function __spreadArray(to, from, pack) {
-    if (pack || arguments.length === 2) for (var i = 0, l = from.length, ar; i < l; i++) {
-        if (ar || !(i in from)) {
-            if (!ar) ar = Array.prototype.slice.call(from, 0, i);
-            ar[i] = from[i];
-        }
-    }
-    return to.concat(ar || from);
-}
-
-var removeElement = function (arr, item, compare) {
-    if (compare === void 0) { compare = function (element, item) { return element === item; }; }
-    var index = arr.findIndex(function (element) { return compare(element, item); });
+const removeElement = (arr, item, compare = (element, item) => element === item) => {
+    const index = arr.findIndex((element) => compare(element, item));
     if (index === -1)
         return arr;
-    return __spreadArray(__spreadArray([], arr.slice(0, index)), arr.slice(index + 1));
+    return [...arr.slice(0, index), ...arr.slice(index + 1)];
 };
-var removeElementInPlace = function (arr, item, compare) {
-    if (compare === void 0) { compare = function (element, item) { return element === item; }; }
-    var index = arr.findIndex(function (element) { return compare(element, item); });
+const removeElementInPlace = (arr, item, compare = (element, item) => element === item) => {
+    const index = arr.findIndex((element) => compare(element, item));
     if (index === -1)
         return;
     arr.splice(index, 1);
@@ -625,101 +559,127 @@ function unsubscribe(subscription) {
     }
 }
 
-var AsyncSerialScheduler = /** @class */ (function () {
-    function AsyncSerialScheduler(observer) {
+class AsyncSerialScheduler {
+    _baseObserver;
+    _pendingPromises;
+    constructor(observer) {
         this._baseObserver = observer;
         this._pendingPromises = new Set();
     }
-    AsyncSerialScheduler.prototype.complete = function () {
-        var _this = this;
+    complete() {
         Promise.all(this._pendingPromises)
-            .then(function () { return _this._baseObserver.complete(); })
-            .catch(function (error) { return _this._baseObserver.error(error); });
-    };
-    AsyncSerialScheduler.prototype.error = function (error) {
+            .then(() => this._baseObserver.complete())
+            .catch((error) => this._baseObserver.error(error));
+    }
+    error(error) {
         this._baseObserver.error(error);
-    };
-    AsyncSerialScheduler.prototype.schedule = function (task) {
-        var _this = this;
-        var prevPromisesCompletion = Promise.all(this._pendingPromises);
-        var values = [];
-        var next = function (value) { return values.push(value); };
-        var promise = Promise.resolve()
-            .then(function () { return __awaiter(_this, void 0, void 0, function () {
-            var _i, values_1, value;
-            return __generator(this, function (_a) {
-                switch (_a.label) {
-                    case 0: return [4 /*yield*/, prevPromisesCompletion];
-                    case 1:
-                        _a.sent();
-                        return [4 /*yield*/, task(next)];
-                    case 2:
-                        _a.sent();
-                        this._pendingPromises.delete(promise);
-                        for (_i = 0, values_1 = values; _i < values_1.length; _i++) {
-                            value = values_1[_i];
-                            this._baseObserver.next(value);
-                        }
-                        return [2 /*return*/];
-                }
-            });
-        }); })
-            .catch(function (error) {
-            _this._pendingPromises.delete(promise);
-            _this._baseObserver.error(error);
+    }
+    schedule(task) {
+        const prevPromisesCompletion = Promise.all(this._pendingPromises);
+        const values = [];
+        const next = (value) => values.push(value);
+        const promise = Promise.resolve()
+            .then(async () => {
+            await prevPromisesCompletion;
+            await task(next);
+            this._pendingPromises.delete(promise);
+            for (const value of values) {
+                this._baseObserver.next(value);
+            }
+        })
+            .catch((error) => {
+            this._pendingPromises.delete(promise);
+            this._baseObserver.error(error);
         });
         this._pendingPromises.add(promise);
-    };
-    return AsyncSerialScheduler;
-}());
-var mapScheduler = function (observable, observer, fn) {
-    var scheduler = new AsyncSerialScheduler(observer);
-    var subscription = observable.subscribe({
-        complete: function () {
+    }
+}
+const mapScheduler = (observable, observer, fn) => {
+    const scheduler = new AsyncSerialScheduler(observer);
+    const subscription = observable.subscribe({
+        complete() {
             scheduler.complete();
         },
-        error: function (error) {
+        error(error) {
             scheduler.error(error);
         },
-        next: function (input) {
-            var _this = this;
-            scheduler.schedule(function (next) { return __awaiter(_this, void 0, void 0, function () { return __generator(this, function (_a) {
-                return [2 /*return*/, fn(input, next, scheduler.error)];
-            }); }); });
+        next(input) {
+            scheduler.schedule(async (next) => fn(input, next, scheduler.error));
         },
     });
-    return function () { return unsubscribe(subscription); };
+    return () => unsubscribe(subscription);
 };
 
-var createOperator = function (operator) {
-    return function (observable) {
-        return new Observable(function (observer) {
-            return mapScheduler(observable, observer, operator.next);
-        });
+const createOperator = (operator) => (observable) => new Observable((observer) => mapScheduler(observable, observer, operator.next));
+
+const delay = async (period, { timeout = setTimeout } = {}) => {
+    let timeoutId;
+    const promise = new Promise((resolve) => {
+        timeoutId = timeout(resolve, period);
+    });
+    promise.finally(() => {
+        clearTimeout(timeoutId);
+    });
+    return promise;
+};
+
+const delayResult = (fn, period = 0) => async (...args) => {
+    const start = Date.now();
+    const result = await fn(...args);
+    const waitFor = period - (Date.now() - start);
+    if (waitFor > 0)
+        await delay(waitFor);
+    return result;
+};
+
+/** Creates a Promise with the `reject` and `resolve` functions
+ * placed as methods on the promise object itself. It allows you to do:
+ *
+ *     const p = deferred<number>();
+ *     // ...
+ *     p.resolve(42);
+ */
+function deferred() {
+    let methods;
+    const promise = new Promise((resolve, reject) => {
+        methods = { resolve, reject };
+    });
+    return Object.assign(promise, methods);
+}
+
+const createMemoryCacheStore = (now = Date.now) => {
+    const cache = {};
+    const store = {
+        put: (key, data) => (cache[key] = {
+            created: now(),
+            data,
+        }),
+        get: (key) => cache[key],
     };
+    return store;
 };
+class Cache {
+    #store;
+    constructor(store = createMemoryCacheStore()) {
+        this.#store = store;
+    }
+    get(key) {
+        return this.#store.get(key);
+    }
+    put(key, data) {
+        this.#store.put(key, data);
+    }
+}
 
-var types = {
+const types = {
     'use-observable': [false, 'debug'],
     'debounced-observable': [false, 'debug'],
 };
-var defaultLogger = function (type) { return function (logInput) {
-    return typeof logInput === 'string' ? createLogger(type)(logInput) : logInput;
-}; };
-var createLogger = function (type) {
-    return function (prefix) {
-        var _a;
-        if (prefix === void 0) { prefix = ''; }
-        var logType = (_a = types[type]) !== null && _a !== void 0 ? _a : [true, 'log'];
-        var logFn = logType[0] ? console[logType[1]] : function () { };
-        return function (message) {
-            var optionalParams = [];
-            for (var _i = 1; _i < arguments.length; _i++) {
-                optionalParams[_i - 1] = arguments[_i];
-            }
-            return logFn.apply(void 0, __spreadArray([prefix + " " + message], optionalParams));
-        };
-    };
+const defaultLogger = (type) => (logInput) => typeof logInput === 'string' ? createLogger(type)(logInput) : logInput;
+const createLogger = (type) => (prefix = '') => {
+    const logType = types[type] ?? [true, 'log'];
+    const logFn = logType[0] ? console[logType[1]] : () => { };
+    return (message, ...optionalParams) => logFn(`${prefix} ${message}`, ...optionalParams);
 };
 
 function requiredArgs(required, args) {
@@ -770,61 +730,43 @@ function isDate$1(value) {
   return value instanceof Date || typeof value === 'object' && Object.prototype.toString.call(value) === '[object Date]';
 }
 
-var validateOrThrow = function (validator, message) {
-    return function (val, _a) {
-        var _b = _a === void 0 ? {} : _a, _c = _b.stop, stop = _c === void 0 ? false : _c;
-        var result = validator(val);
-        if (stop && !result)
-            throw new Error(message + " instead of " + typeof val);
-        return result;
-    };
+const validateOrThrow = (validator, message) => (val, { stop = false } = {}) => {
+    const result = validator(val);
+    if (stop && !result)
+        throw new Error(`${message} instead of ${typeof val}`);
+    return result;
 };
-var isNumber = validateOrThrow(function (val) { return typeof val === 'number'; }, "val should be a number");
-var isString = validateOrThrow(function (val) { return typeof val === 'string'; }, "val should be a string");
-var isUnkown = validateOrThrow(function (val) { return true; }, "val should be unknown");
-var isNull = validateOrThrow(function (val) { return val === null; }, "val should be null");
-var isObject = validateOrThrow(function (val) { return typeof val === 'object' && val !== null; }, 'val should be an object');
-var isError = validateOrThrow(function (val) { return val instanceof Error; }, 'val should be an error');
-var isDate = validateOrThrow(function (val) { return isDate$1(val); }, 'val should be a date object');
-var _hasKey = function (key, validator, obj, opts) { return obj.hasOwnProperty(key) && validator(obj[key], opts); };
-var _hasKeyStopped = function (key, validator, obj, opts) {
+const isNumber = validateOrThrow((val) => typeof val === 'number', `val should be a number`);
+const isString = validateOrThrow((val) => typeof val === 'string', `val should be a string`);
+const isUnkown = validateOrThrow((val) => true, `val should be unknown`);
+const isNull = validateOrThrow((val) => val === null, `val should be null`);
+const isObject = validateOrThrow((val) => typeof val === 'object' && val !== null, 'val should be an object');
+const isError = validateOrThrow((val) => val instanceof Error, 'val should be an error');
+const isDate = validateOrThrow((val) => isDate$1(val), 'val should be a date object');
+const _hasKey = (key, validator, obj, opts) => obj.hasOwnProperty(key) && validator(obj[key], opts);
+const _hasKeyStopped = (key, validator, obj, opts) => {
     try {
-        var result = _hasKey(key, validator, obj, opts);
+        const result = _hasKey(key, validator, obj, opts);
         if (!result)
-            throw new Error("expected to have property " + key);
+            throw new Error(`expected to have property ${key}`);
         return result;
     }
     catch (e) {
-        throw new Error(key + " - " + e.message);
+        throw new Error(`${key} - ${e.message}`);
     }
 };
-var hasKey = function (key, validator) {
-    return function (obj, opts) {
-        if (opts === void 0) { opts = {}; }
-        return opts.stop
-            ? _hasKeyStopped(key, validator, obj, opts)
-            : _hasKey(key, validator, obj, opts);
-    };
-};
-var isArray = function (validator) {
-    return function (val, opts) {
-        if (opts === void 0) { opts = {}; }
-        return Array.isArray(val) &&
-            val.reduce(function (memo, val) { return memo && validator(val, opts); }, true);
-    };
-};
-var and = function (valA, valB) {
-    return function (val, opts) {
-        if (opts === void 0) { opts = {}; }
-        return valA(val, opts) && valB(val, opts);
-    };
-};
-var _or = function (valA, valB, val, opts) { return valA(val, opts) || valB(val, opts); };
-var _orStopped = function (valA, valB, val, opts) {
-    var errorA;
-    var errorB;
-    var resA = false;
-    var resB = false;
+const hasKey = (key, validator) => (obj, opts = {}) => opts.stop
+    ? _hasKeyStopped(key, validator, obj, opts)
+    : _hasKey(key, validator, obj, opts);
+const isArray = (validator) => (val, opts = {}) => Array.isArray(val) &&
+    val.reduce((memo, val) => memo && validator(val, opts), true);
+const and = (valA, valB) => (val, opts = {}) => valA(val, opts) && valB(val, opts);
+const _or = (valA, valB, val, opts) => valA(val, opts) || valB(val, opts);
+const _orStopped = (valA, valB, val, opts) => {
+    let errorA;
+    let errorB;
+    let resA = false;
+    let resB = false;
     try {
         resA = valA(val, opts);
     }
@@ -837,38 +779,31 @@ var _orStopped = function (valA, valB, val, opts) {
     catch (e) {
         errorB = e;
     }
-    var res = resA || resB;
+    const res = resA || resB;
     if (!res) {
-        throw new Error(errorA + " || " + errorB);
+        throw new Error(`${errorA} || ${errorB}`);
     }
     return res;
 };
-var or = function (valA, valB) {
-    return function (val, opts) {
-        if (opts === void 0) { opts = {}; }
-        return opts.stop ? _orStopped(valA, valB, val, opts) : _or(valA, valB, val, opts);
-    };
-};
-function all() {
-    var validators = [];
-    for (var _i = 0; _i < arguments.length; _i++) {
-        validators[_i] = arguments[_i];
-    }
-    return function (val, opts) {
-        if (opts === void 0) { opts = {}; }
-        return validators.reduce(function (memo, validator) { return memo && validator(val, opts); }, true);
-    };
+const or = (valA, valB) => (val, opts = {}) => opts.stop ? _orStopped(valA, valB, val, opts) : _or(valA, valB, val, opts);
+function all(...validators) {
+    return (val, opts = {}) => validators.reduce((memo, validator) => memo && validator(val, opts), true);
 }
-var isNumberOrNull = or(isNumber, isNull);
-var isStringOrNull = or(isString, isNull);
+const isNumberOrNull = or(isNumber, isNull);
+const isStringOrNull = or(isString, isNull);
 
 exports.AsyncSerialScheduler = AsyncSerialScheduler;
+exports.Cache = Cache;
 exports.all = all;
 exports.and = and;
 exports.collect = collect;
 exports.createLogger = createLogger;
+exports.createMemoryCacheStore = createMemoryCacheStore;
 exports.createOperator = createOperator;
 exports.defaultLogger = defaultLogger;
+exports.deferred = deferred;
+exports.delay = delay;
+exports.delayResult = delayResult;
 exports.hasKey = hasKey;
 exports.isArray = isArray;
 exports.isDate = isDate;
