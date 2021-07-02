@@ -1,22 +1,21 @@
-import { AsyncFunction } from './type'
 import { Cache } from '../operators/cache'
 import { defaultLogger, LogFn } from '../operators/log'
 
-export const limitCalls = (
-  fn: AsyncFunction,
+export const limitCalls = <Args extends any[], Result>(
+  fn: (...args: Args) => Promise<Result>,
   {
-    cache = new Cache<Parameters<typeof fn>>(),
+    cache = new Cache<Result>(),
     log: logInput = '❓ ',
     hashFn = JSON.stringify,
   }: {
-    cache?: Cache<Parameters<typeof fn>>
+    cache?: Cache<Result>
     log?: LogFn | string
-    hashFn?: (args: Parameters<typeof fn>) => string
+    hashFn?: (args: Args) => string
   } = {}
-): typeof fn => {
+) => {
   const log = defaultLogger('limit-calls')(logInput)
   log(`Created limit-calls`)
-  return async (...args: any[]) => {
+  return async (...args: Args) => {
     const hash = hashFn(args)
     const cached = cache.get(hash)
     if (cached) {

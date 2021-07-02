@@ -703,7 +703,7 @@ const filterCalls = (fn, { cache = new Cache(), log: logInput = '☕️ ', filte
     // TODO this is problematic for equality reason
     if (filter(mappedArgs)) {
         log(`filtered ${location}`);
-        return null;
+        return undefined;
     }
     return fn(...mappedArgs);
 };
