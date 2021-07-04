@@ -19,10 +19,10 @@ export const limitCalls = <Args extends any[], Result>(
     const hash = hashFn(args)
     const cached = cache.get(hash)
     if (cached) {
-      log(`Using cached result`)
+      log(`Using cached result: ` + hash)
       return cached
     }
-    log(`Updating cache`)
+    log(`Updating cache: ` + hash)
     const newData = await fn(...args)
     cache.put(hash, newData)
     return newData
