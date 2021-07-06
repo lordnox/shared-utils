@@ -666,18 +666,45 @@ class Cache {
     }
 }
 
-const types = {
+const logTypes = {
     'use-observable': [false, 'debug'],
     'debounced-observable': [false, 'debug'],
     queue: [false, 'debug'],
     'limit-calls': [false, 'debug'],
     'filter-calls': [false, 'debug'],
 };
-const defaultLogger = (type) => (logInput) => typeof logInput === 'string' ? createLogger(type)(logInput) : logInput;
-const createLogger = (type) => (prefix = '') => {
-    const logType = types[type] ?? [true, 'log'];
-    const logFn = logType[0] ? console[logType[1]] : () => { };
-    return (message, ...optionalParams) => logFn(`${prefix} ${message}`, ...optionalParams);
+exports.logger = console;
+const setLogger = (newLogger) => {
+    exports.logger = newLogger;
+};
+const setLogType = (type, active = logTypes[type]?.[0] ?? false, level = logTypes[type]?.[1] ?? 'log') => (logTypes[type] = [active, level]);
+const getLogType = (type) => logTypes[type];
+const defaultLogger = (type, loggerOptions) => (logInput) => typeof logInput === 'string'
+    ? createLogger(type, loggerOptions)(logInput)
+    : logInput;
+const prefixed = (val, prefix, len) => (prefix + val).slice(-len);
+const prefix2 = (val) => prefixed(val, '00', 2);
+const calcDelta = (last, now) => now - last > 0 ? ` +${now - last}ms` : '';
+const getTimestamp = (now, last) => {
+    const date = new Date(now);
+    const delta = last ? calcDelta(last, now) : '';
+    const timestamp = `[${prefix2(date.getHours())}:${prefix2(date.getMinutes())}:${prefix2(date.getSeconds())}${delta}]`;
+    return timestamp;
+};
+const createLogger = (type, { now: getNow = Date.now } = {}) => {
+    let last;
+    return (prefix = '') => {
+        return (message, ...optionalParams) => {
+            const logType = logTypes[type] ?? [true, 'log'];
+            const logFn = logType[0] ? exports.logger[logType[1]] : undefined;
+            if (!logFn)
+                return;
+            const now = getNow();
+            const timestap = getTimestamp(now, last);
+            last = now;
+            return logFn(`${timestap} ${prefix} ${message}`, ...optionalParams);
+        };
+    };
 };
 
 const limitCalls = (fn, { cache = new Cache(), log: logInput = '❓ ', hashFn = JSON.stringify, } = {}) => {
@@ -3760,6 +3787,7 @@ exports.delayResult = delayResult;
 exports.f = f;
 exports.filterCalls = filterCalls;
 exports.getLocale = getLocale;
+exports.getLogType = getLogType;
 exports.hasKey = hasKey;
 exports.isArray = isArray;
 exports.isDate = isDate;
@@ -3772,11 +3800,13 @@ exports.isString = isString;
 exports.isStringOrNull = isStringOrNull;
 exports.isUnkown = isUnkown;
 exports.limitCalls = limitCalls;
+exports.logTypes = logTypes;
 exports.mapScheduler = mapScheduler;
 exports.or = or;
 exports.removeElement = removeElement;
 exports.removeElementInPlace = removeElementInPlace;
 exports.setLocale = setLocale;
-exports.types = types;
+exports.setLogType = setLogType;
+exports.setLogger = setLogger;
 exports.validateOrThrow = validateOrThrow;
 //# sourceMappingURL=index.js.map
