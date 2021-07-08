@@ -623,14 +623,22 @@ const delay = async (period, { timeout = setTimeout } = {}) => {
     return promise;
 };
 
-const delayResult = (fn, period = 0) => async (...args) => {
-    const start = Date.now();
-    const result = await fn(...args);
-    const waitFor = period - (Date.now() - start);
-    if (waitFor > 0)
-        await delay(waitFor);
-    return result;
-};
+function delayResult(fn, opts = {}) {
+    const options = (typeof opts === 'number' ? { period: opts } : opts);
+    const period = options.period ?? 0;
+    const delayFn = options.delay ?? delay;
+    const nowFn = options.now ?? Date.now;
+    return async (...args) => {
+        const start = nowFn();
+        const result = await fn(...args);
+        const end = nowFn();
+        const runtime = end - start;
+        const waitFor = period - runtime;
+        if (waitFor > 0)
+            await delayFn(waitFor);
+        return result;
+    };
+}
 
 const DEFAULT_CACHE_TTL = 15 * 60 * 1000;
 const createMemoryCacheStore = (now = Date.now) => {
