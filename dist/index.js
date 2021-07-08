@@ -761,6 +761,19 @@ function deferred() {
     return Object.assign(promise, methods);
 }
 
+const only = (fn) => {
+    let running = Promise.resolve();
+    return async (...args) => {
+        const lastRun = running;
+        const thisRun = deferred();
+        running = thisRun;
+        await lastRun;
+        const result = await fn(...args);
+        thisRun.resolve();
+        return result;
+    };
+};
+
 function toInteger(dirtyNumber) {
   if (dirtyNumber === null || dirtyNumber === true || dirtyNumber === false) {
     return NaN;
@@ -3810,6 +3823,7 @@ exports.isUnkown = isUnkown;
 exports.limitCalls = limitCalls;
 exports.logTypes = logTypes;
 exports.mapScheduler = mapScheduler;
+exports.only = only;
 exports.or = or;
 exports.removeElement = removeElement;
 exports.removeElementInPlace = removeElementInPlace;

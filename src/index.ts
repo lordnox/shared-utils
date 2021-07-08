@@ -12,6 +12,7 @@ export * from './scheduler/async-scheduler'
 export * from './promise/deferred'
 export * from './promise/delay'
 export * from './promise/unpack-type'
+export * from './promise/only'
 
 export * from './operators/cache'
 export * from './operators/log'
