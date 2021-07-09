@@ -1,4 +1,4 @@
-import ActivityTracker from './activity-tracker'
+import ActivityTracker, { Task } from './activity-tracker'
 
 interface TestTask {
   id: number
@@ -56,5 +56,33 @@ describe('ActivityTracker', () => {
       id: 2,
       data: 'done',
     })
+  })
+  it('should notify me of changes through an observable', (done) => {
+    const myTask = { id: 1 }
+    const activityTracker = new ActivityTracker<TestTask & { data?: string }>()
+    const events = [
+      (action: string, task: Task<any>) => {
+        expect(action).toEqual('added')
+      },
+      (action: string, task: Task<any>) => {
+        expect(action).toEqual('updated')
+      },
+      (action: string, task: Task<any>) => {
+        expect(action).toEqual('updated')
+      },
+      (action: string, task: Task<any>) => {
+        expect(action).toEqual('finished')
+        done()
+      },
+    ]
+    const observer = activityTracker.observer.subscribe(({ action, task }) => {
+      const assert = events.shift()
+      expect(assert).not.toBeUndefined()
+      assert!(action, task)
+    })
+    const task = activityTracker.add(myTask)
+    task.update({ data: 'progress' })
+    task.done({ data: 'finished' })
+    observer.unsubscribe()
   })
 })

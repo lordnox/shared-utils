@@ -3301,6 +3301,16 @@ class Queue {
     }
 }
 
+const createObservableTrigger = () => {
+    const listeners = [];
+    const observable = new Observable((observer) => {
+        listeners.push(observer);
+        return () => removeElementInPlace(listeners, observer);
+    });
+    const trigger = (data) => listeners.forEach((listener) => listener.next(data));
+    return { observable, trigger };
+};
+
 exports.TaskStatus = void 0;
 (function (TaskStatus) {
     TaskStatus[TaskStatus["active"] = 0] = "active";
@@ -3314,7 +3324,17 @@ class Task {
         this.data = data;
         this.#tracker = tracker;
     }
-    done() {
+    update(data) {
+        this.data = { ...this.data, ...data };
+        this.#tracker.check(this);
+    }
+    set(data) {
+        this.data = data;
+        this.#tracker.check(this);
+    }
+    done(data) {
+        if (data)
+            this.update(data);
         this.status = exports.TaskStatus.finished;
         this.#tracker.check(this);
     }
@@ -3323,12 +3343,21 @@ class ActivityTracker {
     #activeTasks = [];
     #finishedTasks = [];
     #cleanup;
+    #observable;
+    #trigger;
     constructor({ cleanup = (tasks) => tasks, } = {}) {
         this.#cleanup = cleanup;
+        const { observable, trigger } = createObservableTrigger();
+        this.#observable = observable;
+        this.#trigger = trigger;
+    }
+    get observer() {
+        return this.#observable;
     }
     add(data) {
         const task = new Task(data, this);
         this.#activeTasks.push(task);
+        this.#trigger({ action: 'added', task });
         return task;
     }
     check(task) {
@@ -3338,7 +3367,10 @@ class ActivityTracker {
             removeElementInPlace(this.#activeTasks, task);
             this.#finishedTasks.push(task);
             this.#finishedTasks = this.#cleanup(this.#finishedTasks);
+            this.#trigger({ action: 'finished', task });
         }
+        else
+            this.#trigger({ action: 'updated', task });
     }
     getActiveTasks() {
         return this.#activeTasks;
