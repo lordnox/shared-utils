@@ -35,4 +35,26 @@ describe('ActivityTracker', () => {
     task.done()
     task.done()
   })
+
+  it('should be able to update the task', () => {
+    const myTask = { id: 1 }
+    const activityTracker = new ActivityTracker<TestTask & { data?: string }>()
+    const task = activityTracker.add(myTask)
+    expect(activityTracker.getActiveTasks()[0].data).toEqual({ id: 1 })
+    task.update({ data: 'update' })
+    expect(activityTracker.getActiveTasks()[0].data).toEqual({
+      id: 1,
+      data: 'update',
+    })
+    task.set({ id: 2, data: 'set' })
+    expect(activityTracker.getActiveTasks()[0].data).toEqual({
+      id: 2,
+      data: 'set',
+    })
+    task.done({ data: 'done' })
+    expect(activityTracker.getFinishedTasks()[0].data).toEqual({
+      id: 2,
+      data: 'done',
+    })
+  })
 })

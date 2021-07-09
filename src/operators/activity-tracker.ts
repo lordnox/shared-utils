@@ -20,7 +20,16 @@ export class Task<Type> {
     this.#tracker = tracker
   }
 
-  done() {
+  update(data: Partial<Type>) {
+    this.data = { ...this.data, ...data }
+  }
+
+  set(data: Type) {
+    this.data = data
+  }
+
+  done(data?: Partial<Type>) {
+    if (data) this.update(data)
     this.status = TaskStatus.finished
     this.#tracker.check(this)
   }
