@@ -3301,6 +3301,53 @@ class Queue {
     }
 }
 
+exports.TaskStatus = void 0;
+(function (TaskStatus) {
+    TaskStatus[TaskStatus["active"] = 0] = "active";
+    TaskStatus[TaskStatus["finished"] = 1] = "finished";
+})(exports.TaskStatus || (exports.TaskStatus = {}));
+class Task {
+    #tracker;
+    data;
+    status = exports.TaskStatus.active;
+    constructor(data, tracker) {
+        this.data = data;
+        this.#tracker = tracker;
+    }
+    done() {
+        this.status = exports.TaskStatus.finished;
+        this.#tracker.check(this);
+    }
+}
+class ActivityTracker {
+    #activeTasks = [];
+    #finishedTasks = [];
+    #cleanup;
+    constructor({ cleanup = (tasks) => tasks, } = {}) {
+        this.#cleanup = cleanup;
+    }
+    add(data) {
+        const task = new Task(data, this);
+        this.#activeTasks.push(task);
+        return task;
+    }
+    check(task) {
+        if (task.status === exports.TaskStatus.finished) {
+            if (this.#finishedTasks.find((t) => task === t))
+                return;
+            removeElementInPlace(this.#activeTasks, task);
+            this.#finishedTasks.push(task);
+            this.#finishedTasks = this.#cleanup(this.#finishedTasks);
+        }
+    }
+    getActiveTasks() {
+        return this.#activeTasks;
+    }
+    getFinishedTasks() {
+        return this.#finishedTasks;
+    }
+}
+
 var formatDistanceLocale = {
   lessThanXSeconds: {
     standalone: {
@@ -3791,10 +3838,12 @@ const f = (date, formatStr, options) => format(date, formatStr, {
     ...options,
 });
 
+exports.ActivityTracker = ActivityTracker;
 exports.AsyncSerialScheduler = AsyncSerialScheduler;
 exports.Cache = Cache;
 exports.DEFAULT_CACHE_TTL = DEFAULT_CACHE_TTL;
 exports.Queue = Queue;
+exports.Task = Task;
 exports.all = all;
 exports.and = and;
 exports.collect = collect;
