@@ -1,46 +1,16 @@
 import { Observable } from 'observable-fns'
 import { removeElementInPlace } from '../array/remove-element'
 import { createObservableTrigger } from '../observable/trigger'
-
-export enum TaskStatus {
-  active,
-  finished,
-}
+import { Task, TaskActions, TaskStatus } from './task'
 
 export interface Tracker<Type> {
-  getActiveTasks: () => Task<Type>[]
-  getFinishedTasks: () => Task<Type>[]
+  activeTasks: Task<Type>[]
+  finishedTasks: Task<Type>[]
+  observable: Observable<TrackerActions<Type>>
 }
 
-export class Task<Type> {
-  #tracker: ActivityTracker<Type>
-  data: Type
-  status: TaskStatus = TaskStatus.active
-
-  constructor(data: Type, tracker: ActivityTracker<Type>) {
-    this.data = data
-    this.#tracker = tracker
-  }
-
-  update(data: Partial<Type>) {
-    this.data = { ...this.data, ...data }
-    this.#tracker.check(this)
-  }
-
-  set(data: Type) {
-    this.data = data
-    this.#tracker.check(this)
-  }
-
-  done(data?: Partial<Type>) {
-    if (data) this.update(data)
-    this.status = TaskStatus.finished
-    this.#tracker.check(this)
-  }
-}
-
-export type TaskActions<Type> = {
-  action: 'added' | 'finished' | 'updated'
+export type TrackerActions<Type> = {
+  action: TaskActions
   task: Task<Type>
 }
 
@@ -48,8 +18,8 @@ export class ActivityTracker<Type> implements Tracker<Type> {
   #activeTasks: Task<Type>[] = []
   #finishedTasks: Task<Type>[] = []
   #cleanup: (tasks: Task<Type>[]) => Task<Type>[]
-  #observable: Observable<TaskActions<Type>>
-  #trigger: (data: TaskActions<Type>) => void
+  #observable: Observable<TrackerActions<Type>>
+  #trigger: (data: TrackerActions<Type>) => void
 
   constructor({
     cleanup = (tasks) => tasks,
@@ -57,37 +27,37 @@ export class ActivityTracker<Type> implements Tracker<Type> {
     cleanup?: (tasks: Task<Type>[]) => Task<Type>[]
   } = {}) {
     this.#cleanup = cleanup
-    const { observable, trigger } = createObservableTrigger<TaskActions<Type>>()
+    const { observable, trigger } =
+      createObservableTrigger<TrackerActions<Type>>()
     this.#observable = observable
     this.#trigger = trigger
   }
 
-  get observer() {
+  get observable() {
     return this.#observable
   }
 
   add(data: Type) {
-    const task = new Task<Type>(data, this)
+    const task = new Task<Type>(data, this.#check.bind(this))
     this.#activeTasks.push(task)
-    this.#trigger({ action: 'added', task })
     return task
   }
 
-  check(task: Task<Type>) {
+  #check(action: TaskActions, task: Task<Type>) {
     if (task.status === TaskStatus.finished) {
       if (this.#finishedTasks.find((t) => task === t)) return
       removeElementInPlace(this.#activeTasks, task)
       this.#finishedTasks.push(task)
       this.#finishedTasks = this.#cleanup(this.#finishedTasks)
-      this.#trigger({ action: 'finished', task })
-    } else this.#trigger({ action: 'updated', task })
+    }
+    this.#trigger({ action, task })
   }
 
-  getActiveTasks() {
+  get activeTasks() {
     return this.#activeTasks
   }
 
-  getFinishedTasks() {
+  get finishedTasks() {
     return this.#finishedTasks
   }
 }

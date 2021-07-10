@@ -612,6 +612,16 @@ const mapScheduler = (observable, observer, fn) => {
 
 const createOperator = (operator) => (observable) => new Observable((observer) => mapScheduler(observable, observer, operator.next));
 
+const createObservableTrigger = () => {
+    const listeners = [];
+    const observable = new Observable((observer) => {
+        listeners.push(observer);
+        return () => removeElementInPlace(listeners, observer);
+    });
+    const trigger = (data) => listeners.forEach((listener) => listener.next(data));
+    return { observable, trigger };
+};
+
 const delay = async (period, { timeout = setTimeout } = {}) => {
     let timeoutId;
     const promise = new Promise((resolve) => {
@@ -773,6 +783,138 @@ const only = (fn) => {
         return result;
     };
 };
+
+const noop = () => { };
+/**
+ * Status a task can be in
+ *
+ * void => active
+ * active => finished
+ **/
+exports.TaskStatus = void 0;
+(function (TaskStatus) {
+    TaskStatus[TaskStatus["active"] = 0] = "active";
+    TaskStatus[TaskStatus["finished"] = 1] = "finished";
+})(exports.TaskStatus || (exports.TaskStatus = {}));
+/**
+ * Actions that can be done with a task
+ **/
+exports.TaskActions = void 0;
+(function (TaskActions) {
+    TaskActions[TaskActions["update"] = 0] = "update";
+    TaskActions[TaskActions["created"] = 1] = "created";
+    TaskActions[TaskActions["finished"] = 2] = "finished";
+})(exports.TaskActions || (exports.TaskActions = {}));
+class Task {
+    #notify;
+    data;
+    status = exports.TaskStatus.active;
+    constructor(data, notify = noop) {
+        this.data = data;
+        this.#notify = notify;
+        this.#notify(exports.TaskActions.created, this);
+    }
+    update(data) {
+        this.data = { ...this.data, ...data };
+        this.#notify(exports.TaskActions.update, this);
+    }
+    set(data) {
+        this.data = data;
+        this.#notify(exports.TaskActions.update, this);
+    }
+    done(data) {
+        if (data)
+            this.update(data);
+        this.status = exports.TaskStatus.finished;
+        this.#notify(exports.TaskActions.finished, this);
+    }
+}
+
+class ActivityTracker {
+    #activeTasks = [];
+    #finishedTasks = [];
+    #cleanup;
+    #observable;
+    #trigger;
+    constructor({ cleanup = (tasks) => tasks, } = {}) {
+        this.#cleanup = cleanup;
+        const { observable, trigger } = createObservableTrigger();
+        this.#observable = observable;
+        this.#trigger = trigger;
+    }
+    get observable() {
+        return this.#observable;
+    }
+    add(data) {
+        const task = new Task(data, this.#check.bind(this));
+        this.#activeTasks.push(task);
+        return task;
+    }
+    #check(action, task) {
+        if (task.status === exports.TaskStatus.finished) {
+            if (this.#finishedTasks.find((t) => task === t))
+                return;
+            removeElementInPlace(this.#activeTasks, task);
+            this.#finishedTasks.push(task);
+            this.#finishedTasks = this.#cleanup(this.#finishedTasks);
+        }
+        this.#trigger({ action, task });
+    }
+    get activeTasks() {
+        return this.#activeTasks;
+    }
+    get finishedTasks() {
+        return this.#finishedTasks;
+    }
+}
+
+class Queue {
+    #queue = [];
+    #active = 0;
+    #handle;
+    #level;
+    #log;
+    #available;
+    constructor(handle, { level = 5, name = 'Q', availabilityFn = (active, level) => active < level, } = {}) {
+        this.#handle = handle;
+        this.#level = level;
+        this.#log = createLogger('queue')(name);
+        this.#available = availabilityFn;
+    }
+    available() {
+        return this.#available(this.#active, this.#level);
+    }
+    deque() {
+        if (this.available())
+            this.pop();
+    }
+    enque(data) {
+        this.#log('enqueing new item');
+        const promise = deferred();
+        this.#queue.push([data, promise]);
+        this.deque();
+        return promise;
+    }
+    async pop() {
+        if (!this.#queue.length) {
+            return;
+        }
+        this.#active++;
+        const [item, promise] = this.#queue.shift();
+        try {
+            const result = await this.#handle(item);
+            promise.resolve(result);
+        }
+        catch (error) {
+            promise.reject(error);
+        }
+        this.#active--;
+        this.pop();
+    }
+    getStatus() {
+        return this.#active;
+    }
+}
 
 function toInteger(dirtyNumber) {
   if (dirtyNumber === null || dirtyNumber === true || dirtyNumber === false) {
@@ -3253,133 +3395,6 @@ function all(...validators) {
 const isNumberOrNull = or(isNumber, isNull);
 const isStringOrNull = or(isString, isNull);
 
-class Queue {
-    #queue = [];
-    #active = 0;
-    #handle;
-    #level;
-    #log;
-    #available;
-    constructor(handle, { level = 5, name = 'Q', availabilityFn = (active, level) => active < level, } = {}) {
-        this.#handle = handle;
-        this.#level = level;
-        this.#log = createLogger('queue')(name);
-        this.#available = availabilityFn;
-    }
-    available() {
-        return this.#available(this.#active, this.#level);
-    }
-    deque() {
-        if (this.available())
-            this.pop();
-    }
-    enque(data) {
-        this.#log('enqueing new item');
-        const promise = deferred();
-        this.#queue.push([data, promise]);
-        this.deque();
-        return promise;
-    }
-    async pop() {
-        if (!this.#queue.length) {
-            return;
-        }
-        this.#active++;
-        const [item, promise] = this.#queue.shift();
-        try {
-            const result = await this.#handle(item);
-            promise.resolve(result);
-        }
-        catch (error) {
-            promise.reject(error);
-        }
-        this.#active--;
-        this.pop();
-    }
-    getStatus() {
-        return this.#active;
-    }
-}
-
-const createObservableTrigger = () => {
-    const listeners = [];
-    const observable = new Observable((observer) => {
-        listeners.push(observer);
-        return () => removeElementInPlace(listeners, observer);
-    });
-    const trigger = (data) => listeners.forEach((listener) => listener.next(data));
-    return { observable, trigger };
-};
-
-exports.TaskStatus = void 0;
-(function (TaskStatus) {
-    TaskStatus[TaskStatus["active"] = 0] = "active";
-    TaskStatus[TaskStatus["finished"] = 1] = "finished";
-})(exports.TaskStatus || (exports.TaskStatus = {}));
-class Task {
-    #tracker;
-    data;
-    status = exports.TaskStatus.active;
-    constructor(data, tracker) {
-        this.data = data;
-        this.#tracker = tracker;
-    }
-    update(data) {
-        this.data = { ...this.data, ...data };
-        this.#tracker.check(this);
-    }
-    set(data) {
-        this.data = data;
-        this.#tracker.check(this);
-    }
-    done(data) {
-        if (data)
-            this.update(data);
-        this.status = exports.TaskStatus.finished;
-        this.#tracker.check(this);
-    }
-}
-class ActivityTracker {
-    #activeTasks = [];
-    #finishedTasks = [];
-    #cleanup;
-    #observable;
-    #trigger;
-    constructor({ cleanup = (tasks) => tasks, } = {}) {
-        this.#cleanup = cleanup;
-        const { observable, trigger } = createObservableTrigger();
-        this.#observable = observable;
-        this.#trigger = trigger;
-    }
-    get observer() {
-        return this.#observable;
-    }
-    add(data) {
-        const task = new Task(data, this);
-        this.#activeTasks.push(task);
-        this.#trigger({ action: 'added', task });
-        return task;
-    }
-    check(task) {
-        if (task.status === exports.TaskStatus.finished) {
-            if (this.#finishedTasks.find((t) => task === t))
-                return;
-            removeElementInPlace(this.#activeTasks, task);
-            this.#finishedTasks.push(task);
-            this.#finishedTasks = this.#cleanup(this.#finishedTasks);
-            this.#trigger({ action: 'finished', task });
-        }
-        else
-            this.#trigger({ action: 'updated', task });
-    }
-    getActiveTasks() {
-        return this.#activeTasks;
-    }
-    getFinishedTasks() {
-        return this.#finishedTasks;
-    }
-}
-
 var formatDistanceLocale = {
   lessThanXSeconds: {
     standalone: {
@@ -3881,6 +3896,7 @@ exports.and = and;
 exports.collect = collect;
 exports.createLogger = createLogger;
 exports.createMemoryCacheStore = createMemoryCacheStore;
+exports.createObservableTrigger = createObservableTrigger;
 exports.createOperator = createOperator;
 exports.defaultLogger = defaultLogger;
 exports.deferred = deferred;
@@ -3904,6 +3920,7 @@ exports.isUnkown = isUnkown;
 exports.limitCalls = limitCalls;
 exports.logTypes = logTypes;
 exports.mapScheduler = mapScheduler;
+exports.noop = noop;
 exports.only = only;
 exports.or = or;
 exports.removeElement = removeElement;
