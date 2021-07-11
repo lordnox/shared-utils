@@ -650,44 +650,6 @@ function delayResult(fn, opts = {}) {
     };
 }
 
-const DEFAULT_CACHE_TTL = 15 * 60 * 1000;
-const createMemoryCacheStore = (now = Date.now) => {
-    const cache = {};
-    const store = {
-        put: (key, data) => (cache[key] = {
-            created: now(),
-            data,
-        }),
-        get: (key) => cache[key],
-        keys: () => Object.keys(cache),
-    };
-    return store;
-};
-class Cache {
-    #store;
-    #ttl;
-    #now;
-    constructor({ store = createMemoryCacheStore(), ttl = DEFAULT_CACHE_TTL, now = Date.now, } = {}) {
-        this.#store = store;
-        this.#ttl = ttl;
-        this.#now = now;
-    }
-    get keys() {
-        return this.#store.keys();
-    }
-    get(key) {
-        const cacheEntry = this.#store.get(key);
-        if (!cacheEntry)
-            return;
-        if (cacheEntry.created + this.#ttl > this.#now())
-            return;
-        return cacheEntry.data;
-    }
-    put(key, data) {
-        this.#store.put(key, data);
-    }
-}
-
 const logTypes = {
     'use-observable': [false, 'debug'],
     'debounced-observable': [false, 'debug'],
@@ -728,6 +690,54 @@ const createLogger = (type, { now: getNow = Date.now } = {}) => {
         };
     };
 };
+
+const DEFAULT_CACHE_TTL = 15 * 60 * 1000;
+const createMemoryCacheStore = (now = Date.now) => {
+    const cache = {};
+    const store = {
+        put: (key, data) => (cache[key] = {
+            created: now(),
+            data,
+        }),
+        get: (key) => cache[key],
+        del: (key) => delete cache[key],
+        keys: () => Object.keys(cache),
+    };
+    return store;
+};
+class Cache {
+    #store;
+    #ttl;
+    #now;
+    #log;
+    constructor({ store = createMemoryCacheStore(), ttl, now = Date.now, log: logInput = '🔖 ', } = {}) {
+        this.#store = store;
+        this.#ttl = ttl;
+        this.#now = now;
+        this.#log = defaultLogger('cache')(logInput);
+    }
+    get keys() {
+        return this.#store.keys();
+    }
+    get(key) {
+        const cacheEntry = this.#store.get(key);
+        if (!cacheEntry) {
+            this.#log(`Could not find ${key}`);
+            return;
+        }
+        if (this.#ttl !== undefined &&
+            cacheEntry.created + this.#ttl > this.#now()) {
+            this.#log(`Expired ${key}`);
+            this.#store.del(key);
+            return;
+        }
+        return cacheEntry.data;
+    }
+    put(key, data) {
+        this.#log(`Putting ${key}`);
+        this.#store.put(key, data);
+    }
+}
 
 const limitCalls = (fn, { cache = new Cache(), log: logInput = '❓ ', hashFn = JSON.stringify, } = {}) => {
     const log = defaultLogger('limit-calls')(logInput);
