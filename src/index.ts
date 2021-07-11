@@ -7,6 +7,7 @@ export * from './observable/trigger'
 export * from './functions/delay-result'
 export * from './functions/limit-calls'
 export * from './functions/filter-calls'
+export * from './functions/track-fn'
 
 export * from './scheduler/async-scheduler'
 

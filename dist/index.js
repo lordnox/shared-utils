@@ -756,34 +756,6 @@ function filterCalls(fn, { log: logInput = '☕️ ', filter = () => false, map 
     };
 }
 
-/** Creates a Promise with the `reject` and `resolve` functions
- * placed as methods on the promise object itself. It allows you to do:
- *
- *     const p = deferred<number>();
- *     // ...
- *     p.resolve(42);
- */
-function deferred() {
-    let methods;
-    const promise = new Promise((resolve, reject) => {
-        methods = { resolve, reject };
-    });
-    return Object.assign(promise, methods);
-}
-
-const only = (fn) => {
-    let running = Promise.resolve();
-    return async (...args) => {
-        const lastRun = running;
-        const thisRun = deferred();
-        running = thisRun;
-        await lastRun;
-        const result = await fn(...args);
-        thisRun.resolve();
-        return result;
-    };
-};
-
 const noop = () => { };
 /**
  * Status a task can be in
@@ -867,6 +839,54 @@ class ActivityTracker {
         return this.#finishedTasks;
     }
 }
+
+const isPromiseLike = (val) => {
+    return val instanceof Promise;
+};
+const trackFn = (fn) => {
+    const tracker = new ActivityTracker();
+    const trackedFn = (...args) => {
+        const task = tracker.add({ args });
+        const result = fn(...args);
+        if (isPromiseLike(result)) {
+            return result.then((result) => {
+                task.done({ result });
+                return result;
+            });
+        }
+        task.done({ result });
+        return result;
+    };
+    return [trackedFn, tracker];
+};
+
+/** Creates a Promise with the `reject` and `resolve` functions
+ * placed as methods on the promise object itself. It allows you to do:
+ *
+ *     const p = deferred<number>();
+ *     // ...
+ *     p.resolve(42);
+ */
+function deferred() {
+    let methods;
+    const promise = new Promise((resolve, reject) => {
+        methods = { resolve, reject };
+    });
+    return Object.assign(promise, methods);
+}
+
+const only = (fn) => {
+    let running = Promise.resolve();
+    return async (...args) => {
+        const lastRun = running;
+        const thisRun = deferred();
+        running = thisRun;
+        await lastRun;
+        const result = await fn(...args);
+        thisRun.resolve();
+        return result;
+    };
+};
 
 class Queue {
     #queue = [];
@@ -3914,6 +3934,7 @@ exports.isNull = isNull;
 exports.isNumber = isNumber;
 exports.isNumberOrNull = isNumberOrNull;
 exports.isObject = isObject;
+exports.isPromiseLike = isPromiseLike;
 exports.isString = isString;
 exports.isStringOrNull = isStringOrNull;
 exports.isUnkown = isUnkown;
@@ -3928,5 +3949,6 @@ exports.removeElementInPlace = removeElementInPlace;
 exports.setLocale = setLocale;
 exports.setLogType = setLogType;
 exports.setLogger = setLogger;
+exports.trackFn = trackFn;
 exports.validateOrThrow = validateOrThrow;
 //# sourceMappingURL=index.js.map

@@ -83,5 +83,6 @@ describe('ActivityTracker', () => {
     task.update({ data: 'progress' })
     task.done({ data: 'finished' })
     subscription.unsubscribe()
+    expect(events).toHaveLength(0)
   })
 })
