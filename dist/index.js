@@ -803,6 +803,7 @@ class Task {
 }
 
 class ActivityTracker {
+    #tasks = [];
     #activeTasks = [];
     #finishedTasks = [];
     #cleanup;
@@ -823,6 +824,8 @@ class ActivityTracker {
         return task;
     }
     #check(action, task) {
+        if (action === exports.TaskActions.created)
+            this.#tasks.push(task);
         if (task.status === exports.TaskStatus.finished) {
             if (this.#finishedTasks.find((t) => task === t))
                 return;
@@ -837,6 +840,9 @@ class ActivityTracker {
     }
     get finishedTasks() {
         return this.#finishedTasks;
+    }
+    get tasks() {
+        return this.#tasks;
     }
 }
 

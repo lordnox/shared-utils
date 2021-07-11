@@ -2,19 +2,10 @@ import { Observable } from 'observable-fns'
 import { removeElementInPlace } from '../array/remove-element'
 import { createObservableTrigger } from '../observable/trigger'
 import { Task, TaskActions, TaskStatus } from './task'
-
-export interface Tracker<Type> {
-  activeTasks: Task<Type>[]
-  finishedTasks: Task<Type>[]
-  observable: Observable<TrackerActions<Type>>
-}
-
-export type TrackerActions<Type> = {
-  action: TaskActions
-  task: Task<Type>
-}
+import { Tracker, TrackerActions } from './tracker'
 
 export class ActivityTracker<Type> implements Tracker<Type> {
+  #tasks: Task<Type>[] = []
   #activeTasks: Task<Type>[] = []
   #finishedTasks: Task<Type>[] = []
   #cleanup: (tasks: Task<Type>[]) => Task<Type>[]
@@ -44,6 +35,7 @@ export class ActivityTracker<Type> implements Tracker<Type> {
   }
 
   #check(action: TaskActions, task: Task<Type>) {
+    if (action === TaskActions.created) this.#tasks.push(task)
     if (task.status === TaskStatus.finished) {
       if (this.#finishedTasks.find((t) => task === t)) return
       removeElementInPlace(this.#activeTasks, task)
@@ -59,6 +51,10 @@ export class ActivityTracker<Type> implements Tracker<Type> {
 
   get finishedTasks() {
     return this.#finishedTasks
+  }
+
+  get tasks() {
+    return this.#tasks
   }
 }
 

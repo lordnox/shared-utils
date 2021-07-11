@@ -16,6 +16,7 @@ export * from './operators/cache';
 export * from './operators/log';
 export * from './operators/queue';
 export * from './operators/task';
+export * from './operators/tracker';
 export * from './operators/validator';
 export * from './date/format';
 //# sourceMappingURL=index.d.ts.map

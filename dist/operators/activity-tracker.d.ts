@@ -1,14 +1,6 @@
 import { Observable } from 'observable-fns';
-import { Task, TaskActions } from './task';
-export interface Tracker<Type> {
-    activeTasks: Task<Type>[];
-    finishedTasks: Task<Type>[];
-    observable: Observable<TrackerActions<Type>>;
-}
-export declare type TrackerActions<Type> = {
-    action: TaskActions;
-    task: Task<Type>;
-};
+import { Task } from './task';
+import { Tracker, TrackerActions } from './tracker';
 export declare class ActivityTracker<Type> implements Tracker<Type> {
     #private;
     constructor({ cleanup, }?: {
@@ -18,6 +10,7 @@ export declare class ActivityTracker<Type> implements Tracker<Type> {
     add(data: Type): Task<Type>;
     get activeTasks(): Task<Type>[];
     get finishedTasks(): Task<Type>[];
+    get tasks(): Task<Type>[];
 }
 export default ActivityTracker;
 //# sourceMappingURL=activity-tracker.d.ts.map

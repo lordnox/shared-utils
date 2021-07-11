@@ -1,5 +1,5 @@
-import ActivityTracker, { TrackerActions } from './activity-tracker'
-import { Task, TaskActions, TaskStatus } from './task'
+import ActivityTracker from './activity-tracker'
+import { Task, TaskActions } from './task'
 
 interface TestTask {
   id: number
@@ -10,9 +10,11 @@ describe('ActivityTracker', () => {
     const myTask = { id: 1 }
     const activityTracker = new ActivityTracker<TestTask>()
     const task = activityTracker.add(myTask)
+    expect(activityTracker.tasks).toHaveLength(1)
     expect(activityTracker.activeTasks).toHaveLength(1)
     expect(activityTracker.activeTasks[0].data).toBe(myTask)
     task.done()
+    expect(activityTracker.tasks).toHaveLength(1)
     expect(activityTracker.activeTasks).toHaveLength(0)
     expect(activityTracker.finishedTasks).toHaveLength(1)
   })
