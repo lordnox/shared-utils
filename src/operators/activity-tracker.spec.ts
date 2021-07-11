@@ -27,6 +27,7 @@ describe('ActivityTracker', () => {
     activityTracker.add({ id: 2 }).done()
     activityTracker.add({ id: 3 }).done()
     activityTracker.add({ id: 4 }).done()
+    expect(activityTracker.tasks).toHaveLength(1)
     expect(activityTracker.finishedTasks).toHaveLength(1)
     expect(activityTracker.finishedTasks[0].data).toEqual({ id: 4 })
   })

@@ -3,6 +3,7 @@ import { removeElementInPlace } from '../array/remove-element'
 import { createObservableTrigger } from '../observable/trigger'
 import { Task, TaskActions, TaskStatus } from './task'
 import { Tracker, TrackerActions } from './tracker'
+import difference from 'lodash/difference'
 
 export class ActivityTracker<Type> implements Tracker<Type> {
   #tasks: Task<Type>[] = []
@@ -40,7 +41,11 @@ export class ActivityTracker<Type> implements Tracker<Type> {
       if (this.#finishedTasks.find((t) => task === t)) return
       removeElementInPlace(this.#activeTasks, task)
       this.#finishedTasks.push(task)
-      this.#finishedTasks = this.#cleanup(this.#finishedTasks)
+      const cleanedTasks = this.#cleanup(this.#finishedTasks)
+      difference(this.#finishedTasks, cleanedTasks).forEach((task) => {
+        removeElementInPlace(this.#tasks, task)
+      })
+      this.#finishedTasks = cleanedTasks
     }
     this.#trigger({ action, task })
   }
