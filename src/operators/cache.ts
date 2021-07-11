@@ -7,6 +7,7 @@ export interface CacheEntry<Type> {
 export interface CacheStore<Type> {
   put: (key: string, data: Type) => void
   get: (key: string) => CacheEntry<Type> | undefined
+  keys: () => string[]
 }
 
 export const createMemoryCacheStore = <Type>(now = Date.now) => {
@@ -18,6 +19,7 @@ export const createMemoryCacheStore = <Type>(now = Date.now) => {
         data,
       }),
     get: (key) => cache[key],
+    keys: () => Object.keys(cache),
   }
   return store
 }
@@ -39,6 +41,10 @@ export class Cache<Type> {
     this.#store = store
     this.#ttl = ttl
     this.#now = now
+  }
+
+  get keys() {
+    return this.#store.keys()
   }
 
   get(key: string) {

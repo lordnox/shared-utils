@@ -659,6 +659,7 @@ const createMemoryCacheStore = (now = Date.now) => {
             data,
         }),
         get: (key) => cache[key],
+        keys: () => Object.keys(cache),
     };
     return store;
 };
@@ -670,6 +671,9 @@ class Cache {
         this.#store = store;
         this.#ttl = ttl;
         this.#now = now;
+    }
+    get keys() {
+        return this.#store.keys();
     }
     get(key) {
         const cacheEntry = this.#store.get(key);

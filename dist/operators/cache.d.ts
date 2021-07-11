@@ -6,6 +6,7 @@ export interface CacheEntry<Type> {
 export interface CacheStore<Type> {
     put: (key: string, data: Type) => void;
     get: (key: string) => CacheEntry<Type> | undefined;
+    keys: () => string[];
 }
 export declare const createMemoryCacheStore: <Type>(now?: () => number) => CacheStore<Type>;
 export declare class Cache<Type> {
@@ -15,6 +16,7 @@ export declare class Cache<Type> {
         ttl?: number;
         now?: () => number;
     });
+    get keys(): string[];
     get(key: string): Type | undefined;
     put(key: string, data: Type): void;
 }
