@@ -3,6 +3,7 @@ export * from './array/remove-element'
 
 export * from './observable/operator'
 export * from './observable/trigger'
+export * from './observable/track-observable'
 
 export * from './functions/delay-result'
 export * from './functions/limit-calls'

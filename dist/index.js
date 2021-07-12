@@ -634,154 +634,6 @@ const createObservableTrigger = () => {
     return { observable, trigger };
 };
 
-const delay = async (period, { timeout = setTimeout } = {}) => {
-    let timeoutId;
-    const promise = new Promise((resolve) => {
-        timeoutId = timeout(resolve, period);
-    });
-    promise.finally(() => {
-        clearTimeout(timeoutId);
-    });
-    return promise;
-};
-
-function delayResult(fn, opts = {}) {
-    const options = (typeof opts === 'number' ? { period: opts } : opts);
-    const period = options.period ?? 0;
-    const delayFn = options.delay ?? delay;
-    const nowFn = options.now ?? Date.now;
-    return async (...args) => {
-        const start = nowFn();
-        const result = await fn(...args);
-        const end = nowFn();
-        const runtime = end - start;
-        const waitFor = period - runtime;
-        if (waitFor > 0)
-            await delayFn(waitFor);
-        return result;
-    };
-}
-
-const logTypes = {
-    'use-observable': [false, 'debug'],
-    'debounced-observable': [false, 'debug'],
-    queue: [false, 'debug'],
-    'limit-calls': [false, 'debug'],
-    'filter-calls': [false, 'debug'],
-};
-exports.logger = console;
-const setLogger = (newLogger) => {
-    exports.logger = newLogger;
-};
-const setLogType = (type, active = logTypes[type]?.[0] ?? false, level = logTypes[type]?.[1] ?? 'log') => (logTypes[type] = [active, level]);
-const getLogType = (type) => logTypes[type];
-const defaultLogger = (type, loggerOptions) => (logInput) => typeof logInput === 'string'
-    ? createLogger(type, loggerOptions)(logInput)
-    : logInput;
-const prefixed = (val, prefix, len) => (prefix + val).slice(-len);
-const prefix2 = (val) => prefixed(val, '00', 2);
-const calcDelta = (last, now) => now - last > 0 ? ` +${now - last}ms` : '';
-const getTimestamp = (now, last) => {
-    const date = new Date(now);
-    const delta = last ? calcDelta(last, now) : '';
-    const timestamp = `[${prefix2(date.getHours())}:${prefix2(date.getMinutes())}:${prefix2(date.getSeconds())}${delta}]`;
-    return timestamp;
-};
-const createLogger = (type, { now: getNow = Date.now } = {}) => {
-    let last;
-    return (prefix = '') => {
-        return (message, ...optionalParams) => {
-            const logType = logTypes[type] ?? [true, 'log'];
-            const logFn = logType[0] ? exports.logger[logType[1]] : undefined;
-            if (!logFn)
-                return;
-            const now = getNow();
-            const timestap = getTimestamp(now, last);
-            last = now;
-            return logFn(`${timestap} ${prefix} ${message}`, ...optionalParams);
-        };
-    };
-};
-
-const DEFAULT_CACHE_TTL = 15 * 60 * 1000;
-const createMemoryCacheStore = (now = Date.now) => {
-    const cache = {};
-    const store = {
-        put: (key, data) => (cache[key] = {
-            created: now(),
-            data,
-        }),
-        get: (key) => cache[key],
-        del: (key) => delete cache[key],
-        keys: () => Object.keys(cache),
-    };
-    return store;
-};
-class Cache {
-    #store;
-    #ttl;
-    #now;
-    #log;
-    constructor({ store = createMemoryCacheStore(), ttl, now = Date.now, log: logInput = '🔖 ', } = {}) {
-        this.#store = store;
-        this.#ttl = ttl;
-        this.#now = now;
-        this.#log = defaultLogger('cache')(logInput);
-    }
-    get keys() {
-        return this.#store.keys();
-    }
-    get(key) {
-        const cacheEntry = this.#store.get(key);
-        if (!cacheEntry) {
-            this.#log(`Could not find ${key}`);
-            return;
-        }
-        if (this.#ttl !== undefined &&
-            cacheEntry.created + this.#ttl > this.#now()) {
-            this.#log(`Expired ${key}`);
-            this.#store.del(key);
-            return;
-        }
-        return cacheEntry.data;
-    }
-    put(key, data) {
-        this.#log(`Putting ${key}`);
-        this.#store.put(key, data);
-    }
-}
-
-const limitCalls = (fn, { cache = new Cache(), log: logInput = '❓ ', hashFn = JSON.stringify, } = {}) => {
-    const log = defaultLogger('limit-calls')(logInput);
-    log(`Created limit-calls`);
-    return async (...args) => {
-        const hash = hashFn(args);
-        const cached = cache.get(hash);
-        if (cached) {
-            log(`Using cached result: ` + hash);
-            return cached;
-        }
-        log(`Updating cache: ` + hash);
-        const newData = await fn(...args);
-        cache.put(hash, newData);
-        return newData;
-    };
-};
-
-function filterCalls(fn, { log: logInput = '☕️ ', filter = () => false, map = (arg) => arg, } = {}) {
-    return (...argsIn) => {
-        const [arg, ...extraArgs] = argsIn;
-        const log = defaultLogger('filter-fetcher')(logInput);
-        const mappedArg = map(arg);
-        // TODO this is problematic for equality reason
-        if (filter(mappedArg)) {
-            log(`filtered ${location}`);
-            return undefined;
-        }
-        return fn(mappedArg, ...extraArgs);
-    };
-}
-
 const noop = () => { };
 /**
  * Status a task can be in
@@ -2452,6 +2304,195 @@ class ActivityTracker {
     get tasks() {
         return this.#tasks;
     }
+}
+
+const withObserver = (fn) => (nextOrObserver, onError, onComplete) => fn(typeof nextOrObserver !== 'object' || nextOrObserver === null
+    ? {
+        next: nextOrObserver,
+        error: onError,
+        complete: onComplete,
+    }
+    : nextOrObserver);
+const trackObservable = (observable) => {
+    const tracker = new ActivityTracker();
+    const trackedObservable = new Observable(withObserver((observer) => {
+        const task = tracker.add({
+            observer,
+            finished: false,
+            updatedAt: new Date(),
+        });
+        const subscription = observable.subscribe({
+            next: (data) => {
+                task.update({ data, updatedAt: new Date() });
+                observer.next?.(data);
+            },
+            error: (error) => {
+                console.log('error!', error);
+                task.update({ data: error, updatedAt: new Date() });
+                observer.error?.(error);
+            },
+            complete: () => {
+                task.update({ finished: true, updatedAt: new Date() });
+                observer.complete?.();
+            },
+        });
+        return () => {
+            unsubscribe(subscription);
+            task.done();
+        };
+    }));
+    return {
+        observable: trackedObservable,
+        tracker,
+    };
+};
+
+const delay = async (period, { timeout = setTimeout } = {}) => {
+    let timeoutId;
+    const promise = new Promise((resolve) => {
+        timeoutId = timeout(resolve, period);
+    });
+    promise.finally(() => {
+        clearTimeout(timeoutId);
+    });
+    return promise;
+};
+
+function delayResult(fn, opts = {}) {
+    const options = (typeof opts === 'number' ? { period: opts } : opts);
+    const period = options.period ?? 0;
+    const delayFn = options.delay ?? delay;
+    const nowFn = options.now ?? Date.now;
+    return async (...args) => {
+        const start = nowFn();
+        const result = await fn(...args);
+        const end = nowFn();
+        const runtime = end - start;
+        const waitFor = period - runtime;
+        if (waitFor > 0)
+            await delayFn(waitFor);
+        return result;
+    };
+}
+
+const logTypes = {
+    'use-observable': [false, 'debug'],
+    'debounced-observable': [false, 'debug'],
+    queue: [false, 'debug'],
+    'limit-calls': [false, 'debug'],
+    'filter-calls': [false, 'debug'],
+};
+exports.logger = console;
+const setLogger = (newLogger) => {
+    exports.logger = newLogger;
+};
+const setLogType = (type, active = logTypes[type]?.[0] ?? false, level = logTypes[type]?.[1] ?? 'log') => (logTypes[type] = [active, level]);
+const getLogType = (type) => logTypes[type];
+const defaultLogger = (type, loggerOptions) => (logInput) => typeof logInput === 'string'
+    ? createLogger(type, loggerOptions)(logInput)
+    : logInput;
+const prefixed = (val, prefix, len) => (prefix + val).slice(-len);
+const prefix2 = (val) => prefixed(val, '00', 2);
+const calcDelta = (last, now) => now - last > 0 ? ` +${now - last}ms` : '';
+const getTimestamp = (now, last) => {
+    const date = new Date(now);
+    const delta = last ? calcDelta(last, now) : '';
+    const timestamp = `[${prefix2(date.getHours())}:${prefix2(date.getMinutes())}:${prefix2(date.getSeconds())}${delta}]`;
+    return timestamp;
+};
+const createLogger = (type, { now: getNow = Date.now } = {}) => {
+    let last;
+    return (prefix = '') => {
+        return (message, ...optionalParams) => {
+            const logType = logTypes[type] ?? [true, 'log'];
+            const logFn = logType[0] ? exports.logger[logType[1]] : undefined;
+            if (!logFn)
+                return;
+            const now = getNow();
+            const timestap = getTimestamp(now, last);
+            last = now;
+            return logFn(`${timestap} ${prefix} ${message}`, ...optionalParams);
+        };
+    };
+};
+
+const DEFAULT_CACHE_TTL = 15 * 60 * 1000;
+const createMemoryCacheStore = (now = Date.now) => {
+    const cache = {};
+    const store = {
+        put: (key, data) => (cache[key] = {
+            created: now(),
+            data,
+        }),
+        get: (key) => cache[key],
+        del: (key) => delete cache[key],
+        keys: () => Object.keys(cache),
+    };
+    return store;
+};
+class Cache {
+    #store;
+    #ttl;
+    #now;
+    #log;
+    constructor({ store = createMemoryCacheStore(), ttl, now = Date.now, log: logInput = '🔖 ', } = {}) {
+        this.#store = store;
+        this.#ttl = ttl;
+        this.#now = now;
+        this.#log = defaultLogger('cache')(logInput);
+    }
+    get keys() {
+        return this.#store.keys();
+    }
+    get(key) {
+        const cacheEntry = this.#store.get(key);
+        if (!cacheEntry) {
+            this.#log(`Could not find ${key}`);
+            return;
+        }
+        if (this.#ttl !== undefined &&
+            cacheEntry.created + this.#ttl > this.#now()) {
+            this.#log(`Expired ${key}`);
+            this.#store.del(key);
+            return;
+        }
+        return cacheEntry.data;
+    }
+    put(key, data) {
+        this.#log(`Putting ${key}`);
+        this.#store.put(key, data);
+    }
+}
+
+const limitCalls = (fn, { cache = new Cache(), log: logInput = '❓ ', hashFn = JSON.stringify, } = {}) => {
+    const log = defaultLogger('limit-calls')(logInput);
+    log(`Created limit-calls`);
+    return async (...args) => {
+        const hash = hashFn(args);
+        const cached = cache.get(hash);
+        if (cached) {
+            log(`Using cached result: ` + hash);
+            return cached;
+        }
+        log(`Updating cache: ` + hash);
+        const newData = await fn(...args);
+        cache.put(hash, newData);
+        return newData;
+    };
+};
+
+function filterCalls(fn, { log: logInput = '☕️ ', filter = () => false, map = (arg) => arg, } = {}) {
+    return (...argsIn) => {
+        const [arg, ...extraArgs] = argsIn;
+        const log = defaultLogger('filter-fetcher')(logInput);
+        const mappedArg = map(arg);
+        // TODO this is problematic for equality reason
+        if (filter(mappedArg)) {
+            log(`filtered ${location}`);
+            return undefined;
+        }
+        return fn(mappedArg, ...extraArgs);
+    };
 }
 
 const isPromiseLike = (val) => {
@@ -5564,5 +5605,7 @@ exports.setLocale = setLocale;
 exports.setLogType = setLogType;
 exports.setLogger = setLogger;
 exports.trackFn = trackFn;
+exports.trackObservable = trackObservable;
 exports.validateOrThrow = validateOrThrow;
+exports.withObserver = withObserver;
 //# sourceMappingURL=index.js.map
