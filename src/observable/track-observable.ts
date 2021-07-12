@@ -1,7 +1,7 @@
 import { Observable, SubscriptionObserver, unsubscribe } from 'observable-fns'
 import ActivityTracker from '../operators/activity-tracker'
 
-interface ObservableTracker<Type> {
+export interface ObservableTracker<Type> {
   observer: SubscriptionObserver<Type>
   updatedAt: Date
   data?: Type | Error

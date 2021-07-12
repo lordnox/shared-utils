@@ -1,6 +1,6 @@
 import { Observable, SubscriptionObserver } from 'observable-fns';
 import ActivityTracker from '../operators/activity-tracker';
-interface ObservableTracker<Type> {
+export interface ObservableTracker<Type> {
     observer: SubscriptionObserver<Type>;
     updatedAt: Date;
     data?: Type | Error;
@@ -11,5 +11,4 @@ export declare const trackObservable: <Type>(observable: Observable<Type>) => {
     observable: Observable<Type>;
     tracker: ActivityTracker<ObservableTracker<Type>>;
 };
-export {};
 //# sourceMappingURL=track-observable.d.ts.map
