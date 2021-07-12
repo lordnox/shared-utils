@@ -1,1 +1,1 @@
-{"version":3,"file":"trigger.d.ts","sourceRoot":"","sources":["../../src/observable/trigger.ts"],"names":[],"mappings":"AAAA,OAAO,EAAE,UAAU,EAAwB,MAAM,gBAAgB,CAAA;AAGjE,eAAO,MAAM,uBAAuB;;;CAYnC,CAAA"}
+{"version":3,"file":"trigger.d.ts","sourceRoot":"","sources":["../../src/observable/trigger.ts"],"names":[],"mappings":"AAAA,OAAO,EAAE,UAAU,EAAwB,MAAM,gBAAgB,CAAA;AAGjE,eAAO,MAAM,uBAAuB;;;CAqBnC,CAAA"}

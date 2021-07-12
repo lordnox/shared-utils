@@ -613,12 +613,24 @@ const mapScheduler = (observable, observer, fn) => {
 const createOperator = (operator) => (observable) => new Observable((observer) => mapScheduler(observable, observer, operator.next));
 
 const createObservableTrigger = () => {
+    let complete = false;
     const listeners = [];
     const observable = new Observable((observer) => {
         listeners.push(observer);
         return () => removeElementInPlace(listeners, observer);
     });
-    const trigger = (data) => listeners.forEach((listener) => listener.next(data));
+    const trigger = (data) => {
+        if (complete)
+            return;
+        if (data === undefined) {
+            complete = true;
+            listeners.forEach((listener) => listener.complete());
+            return;
+        }
+        return data instanceof Error
+            ? listeners.forEach((listener) => listener.error(data))
+            : listeners.forEach((listener) => listener.next(data));
+    };
     return { observable, trigger };
 };
 
