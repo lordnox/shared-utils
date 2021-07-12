@@ -1,5 +1,6 @@
 export * from './array/collect';
 export * from './array/remove-element';
+export * from './calendar/range-to-string';
 export * from './observable/operator';
 export * from './observable/trigger';
 export * from './observable/track-observable';

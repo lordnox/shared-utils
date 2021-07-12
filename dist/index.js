@@ -43,6 +43,21 @@ const removeElementInPlace = (arr, item, compare = (element, item) => element ==
     arr.splice(index, 1);
 };
 
+const rangeToString = (item) => {
+    const sy = item.start.getFullYear();
+    const ey = item.end.getFullYear();
+    const sm = item.start.getMonth() + 1;
+    const em = item.end.getMonth() + 1;
+    const sd = item.start.getDate();
+    const ed = item.end.getDate();
+    if (sy === ey)
+        if (sm === em)
+            return `${sd}.-${ed}.${sm}.${sy}`;
+        else
+            return `${sd}.${sm}.-${ed}.${em}.${sy}`;
+    return `${sd}.${sm}.${sy}-${ed}.${em}.${ey}`;
+};
+
 const hasSymbols = () => typeof Symbol === "function";
 const hasSymbol = (name) => hasSymbols() && Boolean(Symbol[name]);
 const getSymbol = (name) => hasSymbol(name) ? Symbol[name] : "@@" + name;
@@ -5599,6 +5614,7 @@ exports.mapScheduler = mapScheduler;
 exports.noop = noop;
 exports.only = only;
 exports.or = or;
+exports.rangeToString = rangeToString;
 exports.removeElement = removeElement;
 exports.removeElementInPlace = removeElementInPlace;
 exports.setLocale = setLocale;
