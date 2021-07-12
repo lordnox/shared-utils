@@ -1,5 +1,6 @@
 import { Observable, SubscriptionObserver, unsubscribe } from 'observable-fns'
 import ActivityTracker from '../operators/activity-tracker'
+import { Task } from '../operators/task'
 
 export interface ObservableTracker<Type> {
   observer: SubscriptionObserver<Type>
@@ -25,8 +26,17 @@ export const withObserver =
         : nextOrObserver
     )
 
-export const trackObservable = <Type>(observable: Observable<Type>) => {
-  const tracker = new ActivityTracker<ObservableTracker<Type>>()
+export const trackObservable = <Type>(
+  observable: Observable<Type>,
+  activityTrackerOptions: {
+    cleanup?: (
+      tasks: Task<ObservableTracker<Type>>[]
+    ) => Task<ObservableTracker<Type>>[]
+  } = {}
+) => {
+  const tracker = new ActivityTracker<ObservableTracker<Type>>(
+    activityTrackerOptions
+  )
   const trackedObservable = new Observable<Type>(
     withObserver((observer) => {
       const task = tracker.add({

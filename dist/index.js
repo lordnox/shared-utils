@@ -2328,8 +2328,8 @@ const withObserver = (fn) => (nextOrObserver, onError, onComplete) => fn(typeof 
         complete: onComplete,
     }
     : nextOrObserver);
-const trackObservable = (observable) => {
-    const tracker = new ActivityTracker();
+const trackObservable = (observable, activityTrackerOptions = {}) => {
+    const tracker = new ActivityTracker(activityTrackerOptions);
     const trackedObservable = new Observable(withObserver((observer) => {
         const task = tracker.add({
             observer,
