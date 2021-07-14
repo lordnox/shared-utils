@@ -8,5 +8,11 @@ export default {
     dir: 'dist',
     format: 'cjs',
   },
-  plugins: [typescript(), resolve(), commonjs()],
+  plugins: [
+    typescript(),
+    resolve({
+      preferBuiltins: true,
+    }),
+    commonjs(),
+  ],
 }
